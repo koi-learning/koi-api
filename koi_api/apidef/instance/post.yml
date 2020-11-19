@@ -1,0 +1,28 @@
+Create a new Instance
+This function will create a new instance object if the user has sufficient rights.
+If the name and description is not set, the system will provide a random name and an default description.
+---
+parameters:
+  - name: new Instance
+    in: body
+    required: true
+    description: The new instance to create
+    schema:
+      $ref: "#/components/schemas/NewInstance"
+
+security:
+  bearerAuth: []
+
+tags:
+  - instances
+
+responses:
+  200:
+    description: An instance
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/Model"
+
+  401:
+    description: Unauthorized User
