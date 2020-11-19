@@ -1,0 +1,18 @@
+Get the latest inference data.
+---
+parameters:
+  - $ref: "#/components/parameters/model_uuid"
+  - $ref: "#/components/parameters/instance_uuid"
+
+security:
+  bearerAuth: []
+
+tags:
+  - inference_data
+  - instances
+
+responses:
+  200:
+    description: dfjdfg
+  400:
+    description: dfgjkdnfg

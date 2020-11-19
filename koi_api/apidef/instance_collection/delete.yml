@@ -1,0 +1,17 @@
+Delete an instance.
+---
+parameters:
+  - $ref: "#/components/parameters/model_uuid"
+  - $ref: "#/components/parameters/instance_uuid"
+
+security:
+  brearerAuth: []
+
+tags:
+  - instances
+
+responses:
+  200:
+    description: The instance was deleted.
+  400:
+    description: The instance could not be deleted.

@@ -1,23 +1,24 @@
-Modify an existing model.
+Modify an existing instance.
 ---
 parameters:
   - $ref: "#/components/parameters/model_uuid"
+  - $ref: "#/components/parameters/instance_uuid"
 
 requestBody:
   required: true
-  description: The modified model.
+  description: The modified instance.
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/NewModel"
+        $ref: "#/components/schemas/NewInstance"
 
-
+    
 
 security:
   bearerAuth: []
 
 tags:
-  - models
+  - instances
 
 responses:
   200:

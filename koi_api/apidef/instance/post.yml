@@ -3,13 +3,16 @@ This function will create a new instance object if the user has sufficient right
 If the name and description is not set, the system will provide a random name and an default description.
 ---
 parameters:
-  - name: new Instance
-    in: body
-    required: true
-    description: The new instance to create
-    schema:
-      $ref: "#/components/schemas/NewInstance"
+  - $ref: "#/components/parameters/model_uuid"
 
+requestBody:
+  required: false
+  description: The new instance.
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/NewInstance"
+      
 security:
   bearerAuth: []
 

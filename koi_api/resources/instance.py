@@ -456,6 +456,7 @@ class APIInstanceCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
+    @swag_from("../apidef/instance_collection/get.yml")
     def get(self, model_uuid, model, instance_uuid, instance, me):
 
         # build the response
@@ -490,6 +491,7 @@ class APIInstanceCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_EDIT_INSTANCE, BR.ROLE_SEE_INSTANCE])
     @json_request
+    @swag_from("../apidef/instance_collection/put.yml")
     def put(self, model_uuid, model, me, instance_uuid, instance, json_object):
         if instance.instance_finalized:
             return ERR_BADR("instance is finalized")
@@ -525,6 +527,7 @@ class APIInstanceCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE, BR.ROLE_EDIT_INSTANCE])
+    @swag_from("../apidef/instance_collection/delete.yml")
     def delete(self, model_uuid, model, me, instance_uuid, instance):
         # delete the instance
         db.session.delete(instance)
@@ -550,6 +553,7 @@ class APIInstanceInferenceData(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_GET_INFERENCE_DATA, BR.ROLE_SEE_INSTANCE])
+    @swag_from("../apidef/instance_inference/get.yml")
     def get(self, model_uuid, model, instance_uuid, instance, me):
         if instance.inference_data is None or instance.inference_data.file is None:
             return ERR_NOFO()

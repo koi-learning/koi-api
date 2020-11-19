@@ -7,10 +7,10 @@ security:
   brearerAuth: []
 
 tags:
-  - model
+  - models
 
 responses:
   200:
-    description: The model was edited succesfully.
+    description: The model was deleted.
   400:
-    description: The model could not be edited/finalized.
+    description: The model could not be deleted.

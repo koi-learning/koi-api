@@ -236,6 +236,7 @@ class APIModelCollection(BaseResource):
 
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
+    @swag_from("../apidef/model_collection/delete.yml")
     def delete(self, model, me, model_uuid):
         db.session.delete(model)
         db.session.commit()

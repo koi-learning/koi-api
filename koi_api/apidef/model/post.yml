@@ -2,13 +2,13 @@ Create a new Model
 This function will create a new model object if the user has sufficient rights.
 If the name and description is not set, the system will provide a random name and an default description.
 ---
-parameters:
-  - name: new Model
-    in: body
-    required: true
-    description: The new model to create
-    schema:
-      $ref: "#/components/schemas/NewModel"
+requestBody:
+  required: false
+  description: The new model.
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/NewModel"
 
 security:
   bearerAuth: []
