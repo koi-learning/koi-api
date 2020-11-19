@@ -13,6 +13,11 @@ tags:
 
 responses:
   200:
-    description: dfjdfg
+    description: the inference data.
+    content:
+      application/octet-stream:
+        schema:
+          type: string
+          format: binary
   400:
     description: dfgjkdnfg
