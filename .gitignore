@@ -62,7 +62,6 @@ db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
-instance/
 .webassets-cache
 
 # Scrapy stuff:
@@ -131,3 +130,4 @@ dmypy.json
 koi_api/test.db
 temp/*.dat
 .vscode/settings.json
+.vscode/launch.json
