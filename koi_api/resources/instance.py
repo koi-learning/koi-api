@@ -15,6 +15,7 @@
 
 from flask_restful import request
 from flask import send_file
+from flasgger import swag_from
 from io import BytesIO
 from uuid import uuid1, UUID
 from datetime import datetime
@@ -325,6 +326,7 @@ class APIInstance(BaseResource):
     @paged
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
+    @swag_from("../apidef/instance/get.yml")
     def get(self, model, model_uuid, me, page_offset, page_limit):
         # get the instances
         query = model.instances.join(ORMInstance.granted_users).filter_by(
@@ -364,6 +366,7 @@ class APIInstance(BaseResource):
     @authenticated
     @model_access([BR.ROLE_INSTANTIATE_MODEL, BR.ROLE_SEE_MODEL])
     @json_request
+    @swag_from("../apidef/instance/post.yml")
     def post(self, model_uuid, model, me, json_object):
         """Make a new instance for the given model.
         The model has to be finalized in order to build an instance.

@@ -1,0 +1,17 @@
+Get a model object.
+This function will return a model object visible to the authenticated user.
+---
+parameters:
+  - $ref: "#/components/parameters/model_uuid"
+
+security:
+  bearerAuth: []
+
+tags:
+  - models
+
+responses:
+  200:
+    description: A single model
+    schema:
+      $ref: "#/components/schemas/Model"

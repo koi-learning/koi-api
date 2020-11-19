@@ -15,6 +15,7 @@
 
 from flask import Flask
 from flask_cors import CORS
+from flasgger import Swagger
 
 
 def create_app():
@@ -24,6 +25,9 @@ def create_app():
     app.config.from_envvar("KOI_CONFIG", silent=True)
 
     CORS(app)
+
+    app.config['SWAGGER'] = {'openapi': "3.0.0"}
+    Swagger(app, template_file="./apidef/template.yml")
 
     from . import orm, resources, persistence
 

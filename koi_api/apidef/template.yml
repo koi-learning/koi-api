@@ -1,0 +1,99 @@
+components:
+  schemas:
+    NewModel:
+      type: object
+      properties:
+        model_name:
+          type: string
+        model_description:
+          type: string
+        finalized:
+          type: string
+    Model:
+      type: object
+      properties:
+        model_uuid:
+          type: string
+        model_name:
+          type: string
+        model_description:
+          type: string
+        has_code:
+          type: boolean
+        has_visual_plugin:
+          type: boolean
+        has_label_plugin:
+          type: boolean
+        finalized:
+          type: boolean
+    NewInstance:
+      type: object
+      properties:
+        instance_name:
+          type: string
+        instance_description:
+          type: string
+        finalized:
+          type: boolean
+    Instance:
+      type: object
+      properties:
+        instance_uuid:
+          type: string
+        instance_name:
+          type: string
+        instance_description:
+          type: string
+        has_training:
+          type: boolean
+        has_inference:
+          type: boolean
+        finalized:
+          type: boolean
+
+
+  parameters:
+    page_offset:
+      name: page_offset
+      in: query
+      required: false
+      description: the first model to return
+      schema:
+        type: integer
+    page_limit:
+      name: page_limit
+      in: query
+      required: false
+      description: the number of models to return
+      schema:
+        type: integer
+    model_uuid:
+      name: model_uuid
+      in: path
+      required: true
+      description: the unique identifier of one specific model
+      schema:
+        type: string
+    instance_uuid:
+      name: instance_uuid
+      in: path
+      required: true
+      description: the unique identifier of one specific instance
+      schema:
+        type: string
+    sample_uuid:
+      name: sample_uuid
+      in: path
+      required: true
+      description: the unique identifier of one specific sample
+      schema:
+        type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+info:
+  description: Tolle Beschreibung
+  title: KOI-API
+  version: 0.0.1

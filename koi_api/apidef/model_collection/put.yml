@@ -1,0 +1,22 @@
+Modify an existing model.
+---
+parameters:
+  - $ref: "#/components/parameters/model_uuid"
+  - name: edited Model
+    in: body
+    required: true
+    description: The new model to create
+    schema:
+      $ref: "#/components/schemas/NewModel"
+
+security:
+  bearerAuth: []
+
+tags:
+  - models
+
+responses:
+  200:
+    description: The model was edited succesfully.
+  400:
+    description: The model could not be edited/finalized.

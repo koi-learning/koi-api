@@ -1,0 +1,25 @@
+Get all model objects.
+This function will return all model objects visible to the authenticated user.
+---
+parameters:
+  - $ref: "#/components/parameters/page_limit"
+  - $ref: "#/components/parameters/page_offset"
+
+security:
+  - bearerAuth: []
+
+tags:
+  - models
+
+responses:
+  200:
+    description: A list of models
+    content:
+      application/json:
+        schema:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+  401:
+    description: Unauthorized User
+  

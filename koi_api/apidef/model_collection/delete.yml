@@ -1,0 +1,16 @@
+Delete a model.
+---
+parameters:
+  - $ref: "#/components/parameters/model_uuid"
+
+security:
+  brearerAuth: []
+
+tags:
+  - model
+
+responses:
+  200:
+    description: The model was edited succesfully.
+  400:
+    description: The model could not be edited/finalized.

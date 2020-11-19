@@ -15,6 +15,7 @@
 
 from flask_restful import request
 from flask import send_file
+from flasgger import swag_from
 from io import BytesIO
 from uuid import uuid1, UUID
 from zipfile import ZipFile, BadZipFile
@@ -53,6 +54,7 @@ class APIModel(BaseResource):
 
     @paged
     @authenticated
+    @swag_from("../apidef/model/get.yml")
     def get(self, me, page_offset, page_limit):
 
         # get the models
@@ -88,6 +90,7 @@ class APIModel(BaseResource):
     @authenticated
     @user_access([BR.ROLE_EDIT_MODELS])
     @json_request
+    @swag_from("../apidef/model/post.yml")
     def post(self, me, json_object):
 
         # construct a new model from the fields in the request
@@ -132,6 +135,7 @@ class APIModel(BaseResource):
             BM.MODEL_HAS_CODE: False,
             BM.MODEL_HAS_PLUGIN_LABEL: False,
             BM.MODEL_HAS_PLUGIN_VISUAL: False,
+            BM.MODEL_FINALIZED: False,
         }
 
         return SUCCESS(
@@ -160,6 +164,7 @@ class APIModelCollection(BaseResource):
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
+    @swag_from("../apidef/model_collection/get.yml")
     def get(self, model, me, model_uuid):
 
         # construct the response
@@ -188,6 +193,7 @@ class APIModelCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
     @json_request
+    @swag_from("../apidef/model_collection/put.yml")
     def put(self, model, model_uuid, me, json_object):
         modified = False
         if not model.model_finalized:
