@@ -13,7 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-SQLALCHEMY_DATABASE_URI = "pymysql:///db:3306"
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://koi:koikoi@db/koiserver?charset=utf8mb4"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 FILEPERSISTENCE_COMPRESS = True
