@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.parameters import ORMInstanceParameter
+from koi_api.orm.model import ORMModel
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
@@ -364,7 +366,7 @@ class APIInstance(BaseResource):
     @authenticated
     @model_access([BR.ROLE_INSTANTIATE_MODEL, BR.ROLE_SEE_MODEL])
     @json_request
-    def post(self, model_uuid, model, me, json_object):
+    def post(self, model_uuid, model: ORMModel, me, json_object):
         """Make a new instance for the given model.
         The model has to be finalized in order to build an instance.
         """
@@ -393,8 +395,18 @@ class APIInstance(BaseResource):
         else:
             new_inst.instance_description = "created by " + me.user_name
 
-        # add the new instance
+        # add all model params as instance params:
         db.session.add(new_inst)
+
+        for p in model.params:
+            instance_parameter = ORMInstanceParameter()
+            instance_parameter.param_uuid = uuid1().bytes
+            instance_parameter.instance_id = new_inst.instance_id
+            instance_parameter.model_param_id = p.param_id
+            instance_parameter.param_value = None
+            db.session.add(instance_parameter)
+
+        # add the new instance
         db.session.commit()
 
         owner_role = ORMUserRoleInstance.query.first()

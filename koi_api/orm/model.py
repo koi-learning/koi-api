@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.parameters import ORMModelParameter
+from typing import Iterable
 from ..orm import db
 
 
@@ -50,7 +52,7 @@ class ORMModel(db.Model):
     )
 
     # model parameters
-    params = db.relationship("ORMModelParameter", lazy="dynamic", cascade="all, delete")
+    params: Iterable[ORMModelParameter] = db.relationship("ORMModelParameter", lazy="dynamic", cascade="all, delete")
 
     # access granted to users
     granted_users = db.relationship(

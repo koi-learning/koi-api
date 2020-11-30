@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.parameters import ORMInstanceParameter
+from typing import Iterable
 from ..orm import db
 
 
@@ -37,8 +39,19 @@ class ORMInstance(db.Model):
     model = db.relationship("ORMModel", back_populates="instances")
 
     # all samples available to this instance
+    params: Iterable[ORMInstanceParameter] = db.relationship(
+        "ORMInstanceParameter",
+        back_populates="instance",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+
+    # all samples available to this instance
     samples = db.relationship(
-        "ORMSample", back_populates="instance", lazy="dynamic", cascade="all, delete-orphan"
+        "ORMSample",
+        back_populates="instance",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
     )
 
     # granted user access
