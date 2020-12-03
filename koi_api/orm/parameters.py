@@ -41,4 +41,7 @@ class ORMInstanceParameter(db.Model):
     param_value = db.Column(db.String(500))
 
     model_param_id = db.Column(db.Integer, db.ForeignKey("modelparam.param_id"))
-    model_param = db.relationship("ORMModelParameter")
+    model_param: ORMModelParameter = db.relationship("ORMModelParameter")
+
+    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
+    instance = db.relationship("ORMInstance", back_populates="params")
