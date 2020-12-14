@@ -18,7 +18,7 @@ from ..orm import db
 
 association_table = db.Table(
     "association_tags",
-    db.Base.metadata,
+    db.Model.metadata,
     db.Column("sample_id", db.Integer, db.ForeignKey("sample.sample_id")),
     db.Column("tag_id", db.Integer, db.ForeignKey("sample_tag.tag_id")),
 )
@@ -98,4 +98,7 @@ class ORMSampleTag(db.Model):
     __tablename__ = "sample_tag"
 
     tag_id = db.Column(db.Integer, primary_key=True, unique=True)
-    tag_name = db.Column(db.String(500))
+    tag_name = db.Column(db.String(500), unique=True)
+
+    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
+    instance = db.relationship("ORMInstance", back_populates="tags")
