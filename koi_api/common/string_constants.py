@@ -38,6 +38,10 @@ class BODY_SAMPLE:
     SAMPLE_HAS_FILE = "has_file"
 
 
+class BODY_TAG:
+    TAG_NAME = "name"
+
+
 class BODY_USER:
     USER_NAME = "user_name"
     USER_UUID = "user_uuid"
