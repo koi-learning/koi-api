@@ -59,7 +59,6 @@ class APISampleTag(BaseResource):
             valid_seconds=LT_COLLECTION,
         )
 
-
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
@@ -111,7 +110,6 @@ class APISampleTag(BaseResource):
 
         return SUCCESS()
 
-
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
@@ -129,7 +127,6 @@ class APISampleTag(BaseResource):
     ):
 
         return ERR_FORB()
-
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -152,3 +149,74 @@ class APISampleTag(BaseResource):
         sample.sample_last_modified = datetime.utcnow()
         db.session.commit()
         return SUCCESS()
+
+
+class APISampleTagCollection(BaseResource):
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    @sample_access
+    def delete(
+        self, model_uuid, model, instance_uuid, instance, sample_uuid, sample, me, tag
+    ):
+        """
+        """
+        local_tag = sample.tags.query.filter(tag_name=tag).one_or_none()
+
+        if local_tag is not None:
+            sample.tags.remove(local_tag)
+            db.session.commit()
+
+        return SUCCESS()
+
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    @sample_access
+    @json_request
+    def put(
+        self,
+        model_uuid,
+        model,
+        instance_uuid,
+        instance,
+        sample_uuid,
+        sample,
+        me,
+        json_object,
+    ):
+        return ERR_FORB()
+
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    @sample_access
+    def post(
+        self,
+        model_uuid,
+        model,
+        instance_uuid,
+        instance,
+        sample_uuid,
+        sample,
+        me,
+        json_object,
+    ):
+        return ERR_FORB()
+
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    @sample_access
+    def get(
+        self,
+        model_uuid,
+        model,
+        instance_uuid,
+        instance,
+        sample_uuid,
+        sample,
+        me,
+        json_object,
+    ):
+        return ERR_FORB()
