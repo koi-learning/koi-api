@@ -98,7 +98,7 @@ class ORMSampleTag(db.Model):
     __tablename__ = "sample_tag"
 
     tag_id = db.Column(db.Integer, primary_key=True, unique=True)
-    tag_name = db.Column(db.String(500), unique=True)
+    tag_name = db.Column(db.String(500))
 
     instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
     instance = db.relationship("ORMInstance", back_populates="tags")
