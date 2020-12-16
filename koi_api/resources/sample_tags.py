@@ -36,7 +36,7 @@ class APISampleTag(BaseResource):
     def head(self, model_uuid, model, instance_uuid, instance, sample_uuid, sample, me):
         return SUCCESS(
             "",
-            last_modified=instance.instance_samples_last_modified,
+            last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
         )
 
@@ -49,13 +49,13 @@ class APISampleTag(BaseResource):
     ):
         """
         """
-        tags = sample.tags.query.all()
+        tags = sample.tags
 
         response = [{BT.TAG_NAME: tag.tag_name} for tag in tags]
 
         return SUCCESS(
             response,
-            last_modified=instance.instance_samples_last_modified,
+            last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
         )
 
@@ -82,20 +82,22 @@ class APISampleTag(BaseResource):
         for tag in json_object:
 
             # get all tags currently registered
-            all_tags = {tag.name: tag for tag in ORMSampleTag.query.all()}
+            all_tags = {t.tag_name: t for t in instance.tags}
 
             # is the current tag known?
-            if tag in all_tags.keys():
+            if tag[BT.TAG_NAME] in all_tags.keys():
+                current_tag = all_tags[tag[BT.TAG_NAME]]
 
                 # check that the current tag is not already asigned
-                if tag not in sample.tags:
-                    sample.tags.append(tag)
+                if current_tag not in sample.tags:
+                    sample.tags.append(current_tag)
                     changed = True
             else:
 
                 # create a new tag and associate it
                 new_tag = ORMSampleTag()
                 new_tag.tag_name = tag[BT.TAG_NAME]
+                new_tag.instance_id = instance.instance_id
                 db.session.add(new_tag)
                 sample.tags.append(new_tag)
                 changed = True
@@ -141,7 +143,6 @@ class APISampleTag(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
     ):
         # drop all tags
         sample.tags = []
@@ -161,11 +162,15 @@ class APISampleTagCollection(BaseResource):
     ):
         """
         """
-        local_tag = sample.tags.query.filter(tag_name=tag).one_or_none()
+        tags = sample.tags
 
-        if local_tag is not None:
-            sample.tags.remove(local_tag)
-            db.session.commit()
+        for t in tags:
+            if t.tag_name == tag:
+                sample.tags.remove(t)
+
+        instance.instance_samples_last_modified = datetime.utcnow()
+        sample.sample_last_modified = datetime.utcnow()
+        db.session.commit()
 
         return SUCCESS()
 
