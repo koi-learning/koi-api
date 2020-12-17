@@ -43,7 +43,7 @@ class APIInstanceTag(BaseResource):
     ):
         """
         """
-        tags = instance.tags.query.all()
+        tags = instance.tags.all()
 
         response = [{BT.TAG_NAME: tag.tag_name} for tag in tags]
 
