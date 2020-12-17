@@ -37,6 +37,9 @@ class BODY_SAMPLE:
     SAMPLE_KEY = "key"
     SAMPLE_HAS_FILE = "has_file"
 
+    SAMPLE_TAGS_INCLUDE = "inc_tags"
+    SAMPLE_TAGS_EXCLUDE = "exc_tags"
+
 
 class BODY_TAG:
     TAG_NAME = "name"

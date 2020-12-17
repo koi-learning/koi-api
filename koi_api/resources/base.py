@@ -194,19 +194,19 @@ def instance_access(rights):
 def sample_filter(func):
     @functools.wraps(func)
     def wrapperS(self, *args, **kwargs):
-        filter_obsolete = None
-        filter_consumed = None
+        filter_include = None
+        filter_exclude = None
         try:
-            filter_obsolete = request.args.get(BS.SAMPLE_OBSOLETE, None, int)
-            filter_consumed = request.args.get(BS.SAMPLE_CONSUMED, None, int)
+            filter_include = request.args.getlist(BS.SAMPLE_TAGS_INCLUDE, str)
+            filter_exclude = request.args.getlist(BS.SAMPLE_TAGS_EXCLUDE, str)
         except ValueError:
             return ERR_BADR("illegal param")
 
         return func(
             self,
             *args,
-            filter_obsolete=filter_obsolete,
-            filter_consumed=filter_consumed,
+            filter_include=filter_include,
+            filter_exclude=filter_exclude,
             **kwargs
         )
 
