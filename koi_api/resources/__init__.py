@@ -42,6 +42,8 @@ from .sample import (
     APISampleLabel,
     APISampleLabelCollection,
 )
+from .sample_tags import APISampleTag, APISampleTagCollection
+from .instance_tags import APIInstanceTag
 from .access import (
     APIGeneralAccess,
     APIGeneralAccessCollection,
@@ -132,6 +134,12 @@ def init_app(app):
         APIInstanceDescriptorFile,
         "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/descriptor/<string:descriptor_uuid>/file",
     )
+
+    api.add_resource(
+        APIInstanceTag,
+        "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/tags",
+    )
+
     api.add_resource(
         APISample,
         "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/sample",
@@ -139,6 +147,16 @@ def init_app(app):
     api.add_resource(
         APISampleCollection,
         "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/sample/<string:sample_uuid>",
+    )
+
+    api.add_resource(
+        APISampleTag,
+        "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/sample/<string:sample_uuid>/tags",
+    )
+
+    api.add_resource(
+        APISampleTagCollection,
+        "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/sample/<string:sample_uuid>/tags/<string:tag>",
     )
 
     api.add_resource(

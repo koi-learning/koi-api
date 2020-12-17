@@ -86,6 +86,8 @@ class ORMInstance(db.Model):
         cascade="all, delete",
     )
 
+    tags = db.relationship("ORMSampleTag", lazy="dynamic")
+
 
 class ORMInstanceInferenceData(db.Model):
     __tablename__ = "inferencedata"
