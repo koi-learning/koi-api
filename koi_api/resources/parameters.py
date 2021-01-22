@@ -110,7 +110,7 @@ class APIInstanceParameter(BaseResource):
                 BP.PARAM_CONSTRAINT: param.model_param.param_constraint,
                 BP.PARAM_TYPE: param.model_param.param_type,
             }
-            for param in instance.params
+            for param in instance.params.all()
         ]
         return SUCCESS(response)
 
