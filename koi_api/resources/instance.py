@@ -141,6 +141,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             "",
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_INSTANCE_DESCRIPTOR,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -232,7 +233,10 @@ class APIInstanceDescriptorFile(BaseResource):
         me,
     ):
         return SUCCESS(
-            "", last_modified=instance.instance_last_modified, valid_seconds=LT_INSTANCE
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -327,6 +331,7 @@ class APIInstance(BaseResource):
             "",
             last_modified=model.model_instances_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=model.model_instances_etag,
         )
 
     @paged
@@ -467,7 +472,10 @@ class APIInstanceCollection(BaseResource):
         if instance.instance_finalized:
             valid = LT_INSTANCE_FINALIZED
         return SUCCESS(
-            "", last_modified=instance.instance_last_modified, valid_seconds=valid
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=valid,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -536,7 +544,6 @@ class APIInstanceCollection(BaseResource):
             instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
             model.model_instances_etag = token_hex(16)
-            
 
         db.session.commit()
 
@@ -565,6 +572,7 @@ class APIInstanceInferenceData(BaseResource):
                 "",
                 last_modified=instance.inference_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
+                etag=instance.inference_data.data_etag,
             )
 
     @authenticated
@@ -641,6 +649,7 @@ class APIInstanceTrainingData(BaseResource):
                 "",
                 last_modified=instance.training_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
+                etag=instance.trainins_data.data_etag,
             )
 
     @authenticated

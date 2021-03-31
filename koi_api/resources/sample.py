@@ -46,6 +46,7 @@ class APISample(BaseResource):
             "",
             last_modified=instance.instance_samples_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_samples_etag,
         )
 
     @authenticated
@@ -83,10 +84,14 @@ class APISample(BaseResource):
 
         if len(filter_include) > 0:
             # filter includes
-            samples = samples.filter(ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_include)))
+            samples = samples.filter(
+                ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_include))
+            )
 
         # filter excludes
-        samples = samples.filter(~ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_exclude)))
+        samples = samples.filter(
+            ~ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_exclude))
+        )
 
         # paging
         samples = samples.offset(page_offset).limit(page_limit).all()
@@ -171,7 +176,10 @@ class APISampleCollection(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            "", last_modified=sample.sample_last_modified, valid_seconds=valid
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -217,7 +225,7 @@ class APISampleCollection(BaseResource):
         json_object,
     ):
         modified = False
-        
+
         if BS.SAMPLE_FINALIZED in json_object:
             try:
                 _finalized = min(1, max(0, int(json_object[BS.SAMPLE_FINALIZED])))
@@ -284,7 +292,12 @@ class APISampleData(BaseResource):
         page_limit,
         page_offset,
     ):
-        return SUCCESS("", last_modified=sample.sample_last_modified, valid_seconds=LT_COLLECTION)
+        return SUCCESS(
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @paged
@@ -314,7 +327,11 @@ class APISampleData(BaseResource):
             }
             for d in data
         ]
-        return SUCCESS(response, last_modified=sample.sample_last_modified, valid_seconds=LT_COLLECTION)
+        return SUCCESS(
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=LT_COLLECTION,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -405,7 +422,12 @@ class APISampleDataCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=data.data_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -432,7 +454,9 @@ class APISampleDataCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=data.data_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response, last_modified=data.data_last_modified, valid_seconds=valid
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -536,7 +560,12 @@ class APISampleLabel(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=sample.sample_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @paged
@@ -568,7 +597,9 @@ class APISampleLabel(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=sample.sample_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response, last_modified=sample.sample_last_modified, valid_seconds=valid
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -656,7 +687,12 @@ class APISampleLabelCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=label.label_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=label.label_last_modified,
+            valid_seconds=valid,
+            etag=label.label_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -683,7 +719,9 @@ class APISampleLabelCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=label.label_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response, last_modified=label.label_last_modified, valid_seconds=valid
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -784,7 +822,10 @@ class APISampleDataFile(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            "", last_modified=data.data_last_modified, valid_seconds=valid
+            "",
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
         )
 
     @authenticated
@@ -914,7 +955,10 @@ class APISampleLabelFile(BaseResource):
         me,
     ):
         return SUCCESS(
-            "", last_modified=label.label_last_modified, valid_seconds=LT_SAMPLE
+            "",
+            last_modified=label.label_last_modified,
+            valid_seconds=LT_SAMPLE,
+            etag=label.label_etag,
         )
 
     @authenticated

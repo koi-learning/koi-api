@@ -33,6 +33,7 @@ class APIInstanceTag(BaseResource):
             "",
             last_modified=instance.instance_samples_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_etag,
         )
 
     @authenticated

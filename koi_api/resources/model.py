@@ -159,7 +159,12 @@ class APIModelCollection(BaseResource):
         valid = LT_MODEL
         if model.model_finalized:
             valid = LT_MODEL_FINALIZED
-        return SUCCESS("", last_modified=model.model_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -247,7 +252,12 @@ class APIModelCode(BaseResource):
         valid = LT_MODEL
         if model.model_finalized:
             valid = LT_MODEL_FINALIZED
-        return SUCCESS("", last_modified=model.model_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
@@ -408,7 +418,7 @@ class APIModelRequestPlugin(BaseResource):
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
     def post(self, model_uuid, model, me):
-        
+
         data = request.data
         file_pers = persistence.store_file(data)
 

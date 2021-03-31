@@ -39,6 +39,7 @@ class APISampleTag(BaseResource):
             "",
             last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
         )
 
     @authenticated
