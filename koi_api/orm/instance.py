@@ -34,7 +34,7 @@ class ORMInstance(db.Model):
     instance_last_modified = db.Column(db.DateTime, nullable=False)
     instance_samples_last_modified = db.Column(db.DateTime, nullable=False)
     instance_etag = db.Column(db.String(50))
-    instance_samples_etag = db.Column(db.tring(50))
+    instance_samples_etag = db.Column(db.String(50))
 
     # the associated model
     model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
