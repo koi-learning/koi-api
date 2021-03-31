@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from secrets import token_hex
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
@@ -129,8 +130,10 @@ class APISample(BaseResource):
         new_sample.sample_uuid = uuid1().bytes
 
         new_sample.sample_last_modified = datetime.utcnow()
+        new_sample.sample_etag = token_hex(16)
 
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(new_sample)
         db.session.commit()
@@ -227,7 +230,9 @@ class APISampleCollection(BaseResource):
 
         if modified:
             instance.instance_samples_last_modified = datetime.utcnow()
+            instance.instance_samples_etag = token_hex(16)
             sample.sample_last_modified = datetime.utcnow()
+            sample.sample_etag = token_hex(16)
 
         db.session.commit()
 
@@ -255,6 +260,7 @@ class APISampleCollection(BaseResource):
             http-status: success
         """
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
         db.session.delete(sample)
         db.session.commit()
         return SUCCESS()
@@ -342,8 +348,11 @@ class APISampleData(BaseResource):
             new_data.data_key = "unnamed data"
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         new_data.data_last_modified = datetime.utcnow()
+        new_data.date_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(new_data)
         db.session.commit()
@@ -467,8 +476,11 @@ class APISampleDataCollection(BaseResource):
             if data.data_key != json_object[BS.SAMPLE_KEY]:
                 data.data_key = json_object[BS.SAMPLE_KEY]
                 sample.sample_last_modified = datetime.utcnow()
+                sample.sample_etag = token_hex(16)
                 data.data_last_modified = datetime.utcnow()
+                data.data_etag = token_hex(16)
                 instance.instance_samples_last_modified = datetime.utcnow()
+                instance.instance_samples_etag = token_hex(16)
 
         db.session.commit()
         return SUCCESS()
@@ -494,7 +506,9 @@ class APISampleDataCollection(BaseResource):
             return ERR_BADR("sample is finalized")
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.delete(data)
         db.session.commit()
@@ -586,8 +600,11 @@ class APISampleLabel(BaseResource):
             new_label.label_key = "unnamed label"
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex()
         new_label.label_last_modified = datetime.utcnow()
+        new_label.label_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         db.session.add(new_label)
         db.session.commit()
 
@@ -710,8 +727,11 @@ class APISampleLabelCollection(BaseResource):
             if label.label_key != json_object[BS.SAMPLE_KEY]:
                 label.label_key = json_object[BS.SAMPLE_KEY]
                 instance.instance_samples_last_modified = datetime.utcnow()
+                instance.instance_samples_etag = token_hex(16)
                 sample.sample_last_modified = datetime.utcnow()
+                sample.sample_etag = token_hex(16)
                 label.label_last_modified = datetime.utcnow()
+                label.label_etag = token_hex(16)
 
         db.session.commit()
         return SUCCESS()
@@ -735,7 +755,9 @@ class APISampleLabelCollection(BaseResource):
     ):
         db.session.delete(label)
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         db.session.commit()
         return SUCCESS()
 
@@ -822,8 +844,11 @@ class APISampleDataFile(BaseResource):
         file_pers = persistence.store_file(data_raw)
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         data.data_last_modified = datetime.utcnow()
+        data.data_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         data.file_id = file_pers.file_id
         db.session.add(file_pers)
@@ -947,8 +972,11 @@ class APISampleLabelFile(BaseResource):
         label.file_id = file_pers.file_id
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         label.label_last_modified = datetime.utcnow()
+        label.label_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(file_pers)
         db.session.commit()

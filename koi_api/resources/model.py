@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from secrets import token_hex
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
@@ -95,7 +96,9 @@ class APIModel(BaseResource):
         new_model.model_uuid = uuid1().bytes
         new_model.model_finalized = False
         new_model.model_last_modified = datetime.utcnow()
+        new_model.model_etag = token_hex(16)
         new_model.model_instances_last_modified = datetime.utcnow()
+        new_model.model_instances_etag = token_hex(16)
 
         if BM.MODEL_NAME in json_object:
             new_model.model_name = json_object[BM.MODEL_NAME]
@@ -191,7 +194,6 @@ class APIModelCollection(BaseResource):
     def put(self, model, model_uuid, me, json_object):
         modified = False
         if not model.model_finalized:
-            model.model_last_modified = datetime.utcnow()
             # update this models fields according to the reqest
             if BM.MODEL_NAME in json_object:
                 if model.model_name != json_object[BM.MODEL_NAME]:
@@ -220,6 +222,7 @@ class APIModelCollection(BaseResource):
 
             if modified:
                 model.model_last_modified = datetime.utcnow()
+                model.model_etag = token_hex(16)
 
         else:
             return ERR_BADR("model is finalized")
@@ -271,7 +274,6 @@ class APIModelCode(BaseResource):
     @model_access([BR.ROLE_EDIT_MODEL])
     def post(self, model_uuid, model, me):
         if not model.model_finalized:
-            model.model_last_modified = datetime.utcnow()
             data = request.data
             file_pers = persistence.store_file(data)
 
@@ -320,6 +322,9 @@ class APIModelCode(BaseResource):
             db.session.add(newCode)
             db.session.commit()
 
+            model.model_last_modified = datetime.utcnow()
+            model.model_etag = token_hex(16)
+
             model.code_id = newCode.code_id
             db.session.commit()
 
@@ -357,7 +362,6 @@ class APIModelVisualPlugin(BaseResource):
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
     def post(self, model_uuid, model, me):
-        model.model_last_modified = datetime.utcnow()
         data = request.data
         file_pers = persistence.store_file(data)
 
@@ -368,6 +372,8 @@ class APIModelVisualPlugin(BaseResource):
         db.session.commit()
 
         model.visual_plugin_id = newVisual.plugin_id
+        model.model_last_modified = datetime.utcnow()
+        model.model_etag = token_hex(16)
         db.session.commit()
         return SUCCESS()
 
@@ -402,7 +408,7 @@ class APIModelRequestPlugin(BaseResource):
     @authenticated
     @model_access([BR.ROLE_EDIT_MODEL])
     def post(self, model_uuid, model, me):
-        model.model_last_modified = datetime.utcnow()
+        
         data = request.data
         file_pers = persistence.store_file(data)
 
@@ -413,6 +419,8 @@ class APIModelRequestPlugin(BaseResource):
         db.session.commit()
 
         model.request_plugin_id = newRequest.plugin_id
+        model.model_last_modified = datetime.utcnow()
+        model.model_etag = token_hex(16)
         db.session.commit()
         return SUCCESS()
 

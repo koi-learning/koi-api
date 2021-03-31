@@ -19,6 +19,7 @@ from flask_restful import request
 from flask import send_file
 from io import BytesIO
 from uuid import uuid1, UUID
+from secrets import token_hex
 from datetime import datetime
 from .base import (
     BaseResource,
@@ -94,7 +95,10 @@ class APIInstanceDescriptor(BaseResource):
 
         db.session.add(new_desc)
 
+        # update the timestamp and etag
         instance.instance_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
+
         db.session.commit()
 
         response = {
@@ -190,6 +194,7 @@ class APIInstanceDescriptorCollection(BaseResource):
         if BI.INSTANCE_DESCRIPTOR_KEY in json_object:
             descriptor.descriptor_key = json_object[BI.INSTANCE_DESCRIPTOR_KEY]
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
 
         db.session.commit()
 
@@ -380,9 +385,12 @@ class APIInstance(BaseResource):
         new_inst.model_id = model.model_id
         new_inst.instance_finalized = False
         new_inst.instance_last_modified = datetime.utcnow()
+        new_inst.instance_etag = token_hex(16)
         new_inst.instance_samples_last_modified = datetime.utcnow()
+        new_inst.instance_samples_etag = token_hex(16)
 
         model.model_instances_last_modified = datetime.utcnow()
+        model.model_instances_etag = token_hex(16)
 
         # check if the request is complete
         if BI.INSTANCE_NAME in json_object:
@@ -525,7 +533,10 @@ class APIInstanceCollection(BaseResource):
 
         if modified:
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
+            
 
         db.session.commit()
 
@@ -588,11 +599,15 @@ class APIInstanceInferenceData(BaseResource):
             newRequest.data_file_id = file_pers.file_id
             newRequest.data_uuid = uuid1().bytes
             newRequest.data_last_modified = datetime.utcnow()
+            newRequest.data_etag = token_hex(16)
+
             db.session.add(newRequest)
             db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
 
             instance.inference_data_id = newRequest.data_id
             db.session.commit()
@@ -656,11 +671,14 @@ class APIInstanceTrainingData(BaseResource):
             newRequest.data_file_id = file_pers.file_id
             newRequest.data_uuid = new_uuid.bytes
             newRequest.data_last_modified = datetime.utcnow()
+            newRequest.data_etag = token_hex(16)
             db.session.add(newRequest)
             db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
 
             instance.training_data_id = newRequest.data_id
             db.session.commit()
