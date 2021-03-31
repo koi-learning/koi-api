@@ -31,6 +31,8 @@ class ORMModel(db.Model):
     model_finalized = db.Column(db.Boolean)
     model_last_modified = db.Column(db.DateTime, nullable=False)
     model_instances_last_modified = db.Column(db.DateTime, nullable=False)
+    model_etag = db.Column(db.String(50))
+    model_instances_etag = db.Column(db.String(50))
 
     # blob containing the model code
     code_id = db.Column(db.Integer, db.ForeignKey("modelcode.code_id"))

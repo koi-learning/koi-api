@@ -33,6 +33,8 @@ class ORMInstance(db.Model):
     instance_finalized = db.Column(db.Boolean)
     instance_last_modified = db.Column(db.DateTime, nullable=False)
     instance_samples_last_modified = db.Column(db.DateTime, nullable=False)
+    instance_etag = db.Column(db.String(50))
+    instance_samples_etag = db.Column(db.tring(50))
 
     # the associated model
     model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
@@ -98,6 +100,7 @@ class ORMInstanceInferenceData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime)
+    data_etag = db.Column(db.String(50))
 
     data_file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")
@@ -115,6 +118,7 @@ class ORMInstanceTrainingData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime)
+    data_etag = db.Column(db.String(50))
 
     data_file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")

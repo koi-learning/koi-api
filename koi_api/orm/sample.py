@@ -34,6 +34,7 @@ class ORMSample(db.Model):
     sample_finalized = db.Column(db.Boolean)
 
     sample_last_modified = db.Column(db.DateTime, nullable=False)
+    sample_etag = db.Column(db.String(50))
 
     data = db.relationship(
         "ORMSampleData",
@@ -67,6 +68,7 @@ class ORMSampleData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime, nullable=False)
+    data_etag = db.Column(db.String(50))
 
     data_key = db.Column(db.String(500))
 
@@ -84,6 +86,7 @@ class ORMSampleLabel(db.Model):
     label_uuid = db.Column(db.Binary(16))
 
     label_last_modified = db.Column(db.DateTime, nullable=False)
+    label_etag = db.Column(db.String(50))
 
     label_key = db.Column(db.String(500))
 
