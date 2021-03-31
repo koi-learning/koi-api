@@ -141,6 +141,7 @@ class APIModel(BaseResource):
             response,
             last_modified=new_model.model_last_modified,
             valid_seconds=LT_MODEL,
+            etag=new_model.model_etag,
         )
 
     @authenticated
@@ -186,7 +187,10 @@ class APIModelCollection(BaseResource):
             valid = LT_MODEL_FINALIZED
 
         return SUCCESS(
-            response, last_modified=model.model_last_modified, valid_seconds=valid
+            response,
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
         )
 
     @authenticated

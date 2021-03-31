@@ -108,6 +108,7 @@ class APISample(BaseResource):
             response,
             last_modified=instance.instance_samples_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_samples_etag,
         )
 
     @authenticated
@@ -149,6 +150,7 @@ class APISample(BaseResource):
             },
             last_modified=new_sample.sample_last_modified,
             valid_seconds=LT_SAMPLE,
+            etag=new_sample.sample_etag,
         )
 
     @authenticated
@@ -197,7 +199,10 @@ class APISampleCollection(BaseResource):
             valid = LT_SAMPLE_FINALIZED
 
         return SUCCESS(
-            response, last_modified=sample.sample_last_modified, valid_seconds=valid
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -331,6 +336,7 @@ class APISampleData(BaseResource):
             response,
             last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -455,7 +461,10 @@ class APISampleDataCollection(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            response, last_modified=data.data_last_modified, valid_seconds=valid
+            response,
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
         )
 
     @authenticated
@@ -598,7 +607,10 @@ class APISampleLabel(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            response, last_modified=sample.sample_last_modified, valid_seconds=valid
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -720,7 +732,10 @@ class APISampleLabelCollection(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            response, last_modified=label.label_last_modified, valid_seconds=valid
+            response,
+            last_modified=label.label_last_modified,
+            valid_seconds=valid,
+            etag=label.label_etag,
         )
 
     @authenticated

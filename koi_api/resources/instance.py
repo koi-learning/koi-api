@@ -168,6 +168,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             response,
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -208,6 +209,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             response,
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -371,6 +373,7 @@ class APIInstance(BaseResource):
             response,
             last_modified=model.model_instances_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=model.model_instances_etag,
         )
 
     @authenticated
@@ -450,6 +453,7 @@ class APIInstance(BaseResource):
             },
             last_modified=new_inst.instance_last_modified,
             valid_seconds=LT_INSTANCE,
+            etag=new_inst.instance_etag,
         )
 
     @authenticated
@@ -503,7 +507,7 @@ class APIInstanceCollection(BaseResource):
             valid = LT_INSTANCE_FINALIZED
 
         return SUCCESS(
-            response, last_modified=instance.instance_last_modified, valid_seconds=valid
+            response, last_modified=instance.instance_last_modified, valid_seconds=valid, etag=instance.instance_etag
         )
 
     @authenticated
