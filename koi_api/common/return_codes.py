@@ -22,7 +22,7 @@ class ReturnCode:
         self.m = message
         self.c = code
 
-    def __call__(self, body=None, header=None, last_modified=None, valid_seconds=15):
+    def __call__(self, body=None, header=None, last_modified=None, valid_seconds=15, etag=None):
         rsp = None
         if body is None:
             rsp = Response(json.dumps(self.m), self.c, header, mimetype="application/json")
@@ -33,6 +33,10 @@ class ReturnCode:
             then = datetime.utcnow() + timedelta(seconds=valid_seconds)
             rsp.expires = then
             rsp.last_modified = last_modified
+
+        if etag is not None:
+            rsp.set_etag(etag, False)
+
         return rsp
 
 

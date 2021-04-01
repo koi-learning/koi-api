@@ -14,6 +14,7 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from datetime import datetime
+from secrets import token_hex
 from ..orm import db
 from .base import (
     BaseResource,
@@ -38,6 +39,7 @@ class APISampleTag(BaseResource):
             "",
             last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -57,6 +59,7 @@ class APISampleTag(BaseResource):
             response,
             last_modified=sample.sample_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -107,7 +110,9 @@ class APISampleTag(BaseResource):
 
         if changed:
             instance.instance_samples_last_modified = datetime.utcnow()
+            instance.instance_samples_etag = token_hex(16)
             sample.sample_last_modified = datetime.utcnow()
+            sample.sample_etag = token_hex(16)
             db.session.commit()
 
         return SUCCESS()
@@ -147,7 +152,9 @@ class APISampleTag(BaseResource):
         # drop all tags
         sample.tags = []
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         db.session.commit()
         return SUCCESS()
 
@@ -169,7 +176,9 @@ class APISampleTagCollection(BaseResource):
                 sample.tags.remove(t)
 
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         db.session.commit()
 
         return SUCCESS()

@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from secrets import token_hex
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
@@ -45,6 +46,7 @@ class APISample(BaseResource):
             "",
             last_modified=instance.instance_samples_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_samples_etag,
         )
 
     @authenticated
@@ -82,10 +84,14 @@ class APISample(BaseResource):
 
         if len(filter_include) > 0:
             # filter includes
-            samples = samples.filter(ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_include)))
+            samples = samples.filter(
+                ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_include))
+            )
 
         # filter excludes
-        samples = samples.filter(~ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_exclude)))
+        samples = samples.filter(
+            ~ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_exclude))
+        )
 
         # paging
         samples = samples.offset(page_offset).limit(page_limit).all()
@@ -102,6 +108,7 @@ class APISample(BaseResource):
             response,
             last_modified=instance.instance_samples_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_samples_etag,
         )
 
     @authenticated
@@ -129,8 +136,10 @@ class APISample(BaseResource):
         new_sample.sample_uuid = uuid1().bytes
 
         new_sample.sample_last_modified = datetime.utcnow()
+        new_sample.sample_etag = token_hex(16)
 
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(new_sample)
         db.session.commit()
@@ -141,6 +150,7 @@ class APISample(BaseResource):
             },
             last_modified=new_sample.sample_last_modified,
             valid_seconds=LT_SAMPLE,
+            etag=new_sample.sample_etag,
         )
 
     @authenticated
@@ -168,7 +178,10 @@ class APISampleCollection(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            "", last_modified=sample.sample_last_modified, valid_seconds=valid
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -186,7 +199,10 @@ class APISampleCollection(BaseResource):
             valid = LT_SAMPLE_FINALIZED
 
         return SUCCESS(
-            response, last_modified=sample.sample_last_modified, valid_seconds=valid
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
         )
 
     @authenticated
@@ -214,7 +230,7 @@ class APISampleCollection(BaseResource):
         json_object,
     ):
         modified = False
-        
+
         if BS.SAMPLE_FINALIZED in json_object:
             try:
                 _finalized = min(1, max(0, int(json_object[BS.SAMPLE_FINALIZED])))
@@ -227,7 +243,9 @@ class APISampleCollection(BaseResource):
 
         if modified:
             instance.instance_samples_last_modified = datetime.utcnow()
+            instance.instance_samples_etag = token_hex(16)
             sample.sample_last_modified = datetime.utcnow()
+            sample.sample_etag = token_hex(16)
 
         db.session.commit()
 
@@ -255,6 +273,7 @@ class APISampleCollection(BaseResource):
             http-status: success
         """
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
         db.session.delete(sample)
         db.session.commit()
         return SUCCESS()
@@ -278,7 +297,12 @@ class APISampleData(BaseResource):
         page_limit,
         page_offset,
     ):
-        return SUCCESS("", last_modified=sample.sample_last_modified, valid_seconds=LT_COLLECTION)
+        return SUCCESS(
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @paged
@@ -308,7 +332,12 @@ class APISampleData(BaseResource):
             }
             for d in data
         ]
-        return SUCCESS(response, last_modified=sample.sample_last_modified, valid_seconds=LT_COLLECTION)
+        return SUCCESS(
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=LT_COLLECTION,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -342,8 +371,11 @@ class APISampleData(BaseResource):
             new_data.data_key = "unnamed data"
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         new_data.data_last_modified = datetime.utcnow()
+        new_data.date_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(new_data)
         db.session.commit()
@@ -396,7 +428,12 @@ class APISampleDataCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=data.data_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -423,7 +460,12 @@ class APISampleDataCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=data.data_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response,
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -467,8 +509,11 @@ class APISampleDataCollection(BaseResource):
             if data.data_key != json_object[BS.SAMPLE_KEY]:
                 data.data_key = json_object[BS.SAMPLE_KEY]
                 sample.sample_last_modified = datetime.utcnow()
+                sample.sample_etag = token_hex(16)
                 data.data_last_modified = datetime.utcnow()
+                data.data_etag = token_hex(16)
                 instance.instance_samples_last_modified = datetime.utcnow()
+                instance.instance_samples_etag = token_hex(16)
 
         db.session.commit()
         return SUCCESS()
@@ -494,7 +539,9 @@ class APISampleDataCollection(BaseResource):
             return ERR_BADR("sample is finalized")
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.delete(data)
         db.session.commit()
@@ -522,7 +569,12 @@ class APISampleLabel(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=sample.sample_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @paged
@@ -554,7 +606,12 @@ class APISampleLabel(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=sample.sample_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response,
+            last_modified=sample.sample_last_modified,
+            valid_seconds=valid,
+            etag=sample.sample_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -586,8 +643,11 @@ class APISampleLabel(BaseResource):
             new_label.label_key = "unnamed label"
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex()
         new_label.label_last_modified = datetime.utcnow()
+        new_label.label_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         db.session.add(new_label)
         db.session.commit()
 
@@ -639,7 +699,12 @@ class APISampleLabelCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS("", last_modified=label.label_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            "",
+            last_modified=label.label_last_modified,
+            valid_seconds=valid,
+            etag=label.label_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -666,7 +731,12 @@ class APISampleLabelCollection(BaseResource):
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
-        return SUCCESS(response, last_modified=label.label_last_modified, valid_seconds=valid)
+        return SUCCESS(
+            response,
+            last_modified=label.label_last_modified,
+            valid_seconds=valid,
+            etag=label.label_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -710,8 +780,11 @@ class APISampleLabelCollection(BaseResource):
             if label.label_key != json_object[BS.SAMPLE_KEY]:
                 label.label_key = json_object[BS.SAMPLE_KEY]
                 instance.instance_samples_last_modified = datetime.utcnow()
+                instance.instance_samples_etag = token_hex(16)
                 sample.sample_last_modified = datetime.utcnow()
+                sample.sample_etag = token_hex(16)
                 label.label_last_modified = datetime.utcnow()
+                label.label_etag = token_hex(16)
 
         db.session.commit()
         return SUCCESS()
@@ -735,7 +808,9 @@ class APISampleLabelCollection(BaseResource):
     ):
         db.session.delete(label)
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
         db.session.commit()
         return SUCCESS()
 
@@ -762,7 +837,10 @@ class APISampleDataFile(BaseResource):
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
         return SUCCESS(
-            "", last_modified=data.data_last_modified, valid_seconds=valid
+            "",
+            last_modified=data.data_last_modified,
+            valid_seconds=valid,
+            etag=data.data_etag,
         )
 
     @authenticated
@@ -822,8 +900,11 @@ class APISampleDataFile(BaseResource):
         file_pers = persistence.store_file(data_raw)
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         data.data_last_modified = datetime.utcnow()
+        data.data_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         data.file_id = file_pers.file_id
         db.session.add(file_pers)
@@ -889,7 +970,10 @@ class APISampleLabelFile(BaseResource):
         me,
     ):
         return SUCCESS(
-            "", last_modified=label.label_last_modified, valid_seconds=LT_SAMPLE
+            "",
+            last_modified=label.label_last_modified,
+            valid_seconds=LT_SAMPLE,
+            etag=label.label_etag,
         )
 
     @authenticated
@@ -947,8 +1031,11 @@ class APISampleLabelFile(BaseResource):
         label.file_id = file_pers.file_id
 
         sample.sample_last_modified = datetime.utcnow()
+        sample.sample_etag = token_hex(16)
         label.label_last_modified = datetime.utcnow()
+        label.label_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
+        instance.instance_samples_etag = token_hex(16)
 
         db.session.add(file_pers)
         db.session.commit()
