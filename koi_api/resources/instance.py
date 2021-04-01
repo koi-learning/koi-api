@@ -507,7 +507,10 @@ class APIInstanceCollection(BaseResource):
             valid = LT_INSTANCE_FINALIZED
 
         return SUCCESS(
-            response, last_modified=instance.instance_last_modified, valid_seconds=valid, etag=instance.instance_etag
+            response,
+            last_modified=instance.instance_last_modified,
+            valid_seconds=valid,
+            etag=instance.instance_etag,
         )
 
     @authenticated
