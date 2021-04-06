@@ -643,7 +643,7 @@ class APISampleLabel(BaseResource):
             new_label.label_key = "unnamed label"
 
         sample.sample_last_modified = datetime.utcnow()
-        sample.sample_etag = token_hex()
+        sample.sample_etag = token_hex(16)
         new_label.label_last_modified = datetime.utcnow()
         new_label.label_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
