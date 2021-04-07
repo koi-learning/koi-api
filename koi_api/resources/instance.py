@@ -74,7 +74,10 @@ class APIInstanceDescriptor(BaseResource):
         ]
 
         return SUCCESS(
-            response, last_modified=datetime.utcnow(), valid_seconds=LT_COLLECTION
+            response,
+            last_modified=datetime.utcnow(),
+            valid_seconds=LT_COLLECTION,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -108,7 +111,10 @@ class APIInstanceDescriptor(BaseResource):
         }
 
         return SUCCESS(
-            response, last_modified=datetime.utcnow(), valid_seconds=LT_INSTANCE
+            response,
+            last_modified=datetime.utcnow(),
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
