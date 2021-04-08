@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from flask.helpers import make_response
 from koi_api.orm.parameters import ORMInstanceParameter
 from koi_api.orm.model import ORMModel
 from flask_restful import request
@@ -267,12 +268,19 @@ class APIInstanceDescriptorFile(BaseResource):
             data_raw = persistence.get_file(descriptor.file)
             data_raw = BytesIO(data_raw)
             data_raw.seek(0)
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=instance.instance_last_modified,
-                cache_timeout=LT_INSTANCE,
+
+            response = make_response(
+                send_file(
+                    data_raw,
+                    mimetype="application/octet-stream",
+                    last_modified=instance.instance_last_modified,
+                    cache_timeout=LT_INSTANCE,
+                    add_etags=False,
+                )
             )
+            response.set_etag(instance.instance_etag)
+
+            return response
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -288,15 +296,23 @@ class APIInstanceDescriptorFile(BaseResource):
         descriptor,
         me,
     ):
+        # TODO: delete old descriptor file if already set
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
         descriptor.descriptor_file_id = file_pers.file_id
+        instance.instance_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
 
         db.session.add(file_pers)
         db.session.commit()
 
-        return SUCCESS()
+        return SUCCESS(
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
