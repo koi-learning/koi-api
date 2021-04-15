@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.model import ORMModel
+from koi_api.orm.instance import ORMInstance
 from uuid import UUID, uuid1
 from ..orm import db
 from ..resources.base import (
@@ -96,14 +98,19 @@ class APIInstanceParameter(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def get(self, modle_uuid, model, instance_uuid, instance, me):
+    def get(
+        self, model_uuid, model: ORMModel, instance_uuid, instance: ORMInstance, me
+    ):
         response = [
             {
                 BP.PARAM_UUID_VALUE: UUID(bytes=param.param_uuid).hex,
-                BP.PARAM_UUID: UUID(bytes=param.model_param.param_uuid).hex,
                 BP.PARAM_VALUE: param.param_value,
+                BP.PARAM_NAME: param.model_param.param_name,
+                BP.PARAM_DESCRIPTION: param.model_param.param_description,
+                BP.PARAM_CONSTRAINT: param.model_param.param_constraint,
+                BP.PARAM_TYPE: param.model_param.param_type,
             }
-            for param in instance.params
+            for param in instance.params.all()
         ]
         return SUCCESS(response)
 
@@ -111,7 +118,7 @@ class APIInstanceParameter(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
-    def post(self, modle_uuid, model, instance_uuid, instance, me, json_oject):
+    def post(self, model_uuid, model, instance_uuid, instance, me, json_oject):
         model_param_uuid = None
 
         if BP.PARAM_UUID in json_oject:
@@ -136,7 +143,9 @@ class APIInstanceParameter(BaseResource):
             except ValueError:
                 return ERR_BADR()
 
-        instance_param = instance.params.filter_by(model_param_id=model_param.param_id).one_or_none()
+        instance_param = instance.params.filter_by(
+            model_param_id=model_param.param_id
+        ).one_or_none()
 
         if instance_param is None:
             instance_param = ORMInstanceParameter()
@@ -152,13 +161,13 @@ class APIInstanceParameter(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def put(self, modle_uuid, model, instance_uuid, instance, me):
+    def put(self, model_uuid, model, instance_uuid, instance, me):
         return ERR_FORB()
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def delete(self, modle_uuid, model, instance_uuid, instance, me):
+    def delete(self, model_uuid, model, instance_uuid, instance, me):
         return ERR_FORB()
 
 
@@ -166,29 +175,37 @@ class APIInstanceParameterCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def get(self, modle_uuid, model, instance_uuid, instance, me, param_uuid):
-        param = instance.params.filter_by(param_uuid=UUID(param_uuid).bytes).one_or_none()
+    def get(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
+        param = instance.params.filter_by(
+            param_uuid=UUID(param_uuid).bytes
+        ).one_or_none()
 
         if param is None:
             return ERR_NOFO("parameter is unknown")
 
-        response = {BP.PARAM_UUID: UUID(bytes=param.model_param.param_uuid).hex,
-                    BP.PARAM_UUID_VALUE: UUID(bytes=param.param_uuid).hex,
-                    BP.PARAM_VALUE: param.param_value}
+        response = {
+            BP.PARAM_UUID: UUID(bytes=param.model_param.param_uuid).hex,
+            BP.PARAM_UUID_VALUE: UUID(bytes=param.param_uuid).hex,
+            BP.PARAM_VALUE: param.param_value,
+        }
         return SUCCESS(response)
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def post(self, modle_uuid, model, instance_uuid, instance, me, param_uuid):
+    def post(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
         return ERR_FORB()
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
-    def put(self, modle_uuid, model, instance_uuid, instance, me, param_uuid, json_object):
-        param = instance.params.filter_by(param_uuid=UUID(param_uuid).bytes).one_or_none()
+    def put(
+        self, model_uuid, model, instance_uuid, instance, me, param_uuid, json_object
+    ):
+        param = instance.params.filter_by(
+            param_uuid=UUID(param_uuid).bytes
+        ).one_or_none()
 
         if param is None:
             return ERR_NOFO("parameter is unknown")
@@ -205,8 +222,10 @@ class APIInstanceParameterCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def delete(self, modle_uuid, model, instance_uuid, instance, me, param_uuid):
-        param = instance.params.filter_by(param_uuid=UUID(param_uuid).bytes).one_or_none()
+    def delete(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
+        param = instance.params.filter_by(
+            param_uuid=UUID(param_uuid).bytes
+        ).one_or_none()
 
         if param is None:
             return ERR_NOFO("parameter is unknown")

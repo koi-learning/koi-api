@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.parameters import ORMInstanceParameter
+from typing import Iterable
 from ..orm import db
 
 
@@ -31,14 +33,27 @@ class ORMInstance(db.Model):
     instance_finalized = db.Column(db.Boolean)
     instance_last_modified = db.Column(db.DateTime, nullable=False)
     instance_samples_last_modified = db.Column(db.DateTime, nullable=False)
+    instance_etag = db.Column(db.String(50))
+    instance_samples_etag = db.Column(db.String(50))
 
     # the associated model
     model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
     model = db.relationship("ORMModel", back_populates="instances")
 
     # all samples available to this instance
+    params: Iterable[ORMInstanceParameter] = db.relationship(
+        "ORMInstanceParameter",
+        back_populates="instance",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+
+    # all samples available to this instance
     samples = db.relationship(
-        "ORMSample", back_populates="instance", lazy="dynamic", cascade="all, delete-orphan"
+        "ORMSample",
+        back_populates="instance",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
     )
 
     # granted user access
@@ -73,6 +88,8 @@ class ORMInstance(db.Model):
         cascade="all, delete",
     )
 
+    tags = db.relationship("ORMSampleTag", lazy="dynamic")
+
 
 class ORMInstanceInferenceData(db.Model):
     __tablename__ = "inferencedata"
@@ -83,6 +100,7 @@ class ORMInstanceInferenceData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime)
+    data_etag = db.Column(db.String(50))
 
     data_file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")
@@ -100,6 +118,7 @@ class ORMInstanceTrainingData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime)
+    data_etag = db.Column(db.String(50))
 
     data_file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")

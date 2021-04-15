@@ -13,10 +13,14 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from flask.helpers import make_response
+from koi_api.orm.parameters import ORMInstanceParameter
+from koi_api.orm.model import ORMModel
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
 from uuid import uuid1, UUID
+from secrets import token_hex
 from datetime import datetime
 from .base import (
     BaseResource,
@@ -71,7 +75,10 @@ class APIInstanceDescriptor(BaseResource):
         ]
 
         return SUCCESS(
-            response, last_modified=datetime.utcnow(), valid_seconds=LT_COLLECTION
+            response,
+            last_modified=datetime.utcnow(),
+            valid_seconds=LT_COLLECTION,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -92,7 +99,10 @@ class APIInstanceDescriptor(BaseResource):
 
         db.session.add(new_desc)
 
+        # update the timestamp and etag
         instance.instance_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
+
         db.session.commit()
 
         response = {
@@ -102,7 +112,10 @@ class APIInstanceDescriptor(BaseResource):
         }
 
         return SUCCESS(
-            response, last_modified=datetime.utcnow(), valid_seconds=LT_INSTANCE
+            response,
+            last_modified=datetime.utcnow(),
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -135,6 +148,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             "",
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_INSTANCE_DESCRIPTOR,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -161,6 +175,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             response,
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -188,6 +203,7 @@ class APIInstanceDescriptorCollection(BaseResource):
         if BI.INSTANCE_DESCRIPTOR_KEY in json_object:
             descriptor.descriptor_key = json_object[BI.INSTANCE_DESCRIPTOR_KEY]
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
 
         db.session.commit()
 
@@ -200,6 +216,7 @@ class APIInstanceDescriptorCollection(BaseResource):
             response,
             last_modified=instance.instance_last_modified,
             valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -225,7 +242,10 @@ class APIInstanceDescriptorFile(BaseResource):
         me,
     ):
         return SUCCESS(
-            "", last_modified=instance.instance_last_modified, valid_seconds=LT_INSTANCE
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -248,12 +268,19 @@ class APIInstanceDescriptorFile(BaseResource):
             data_raw = persistence.get_file(descriptor.file)
             data_raw = BytesIO(data_raw)
             data_raw.seek(0)
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=instance.instance_last_modified,
-                cache_timeout=LT_INSTANCE,
+
+            response = make_response(
+                send_file(
+                    data_raw,
+                    mimetype="application/octet-stream",
+                    last_modified=instance.instance_last_modified,
+                    cache_timeout=LT_INSTANCE,
+                    add_etags=False,
+                )
             )
+            response.set_etag(instance.instance_etag)
+
+            return response
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -269,15 +296,23 @@ class APIInstanceDescriptorFile(BaseResource):
         descriptor,
         me,
     ):
+        # TODO: delete old descriptor file if already set
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
         descriptor.descriptor_file_id = file_pers.file_id
+        instance.instance_last_modified = datetime.utcnow()
+        instance.instance_etag = token_hex(16)
 
         db.session.add(file_pers)
         db.session.commit()
 
-        return SUCCESS()
+        return SUCCESS(
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=LT_INSTANCE,
+            etag=instance.instance_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -320,6 +355,7 @@ class APIInstance(BaseResource):
             "",
             last_modified=model.model_instances_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=model.model_instances_etag,
         )
 
     @paged
@@ -359,12 +395,13 @@ class APIInstance(BaseResource):
             response,
             last_modified=model.model_instances_last_modified,
             valid_seconds=LT_COLLECTION,
+            etag=model.model_instances_etag,
         )
 
     @authenticated
     @model_access([BR.ROLE_INSTANTIATE_MODEL, BR.ROLE_SEE_MODEL])
     @json_request
-    def post(self, model_uuid, model, me, json_object):
+    def post(self, model_uuid, model: ORMModel, me, json_object):
         """Make a new instance for the given model.
         The model has to be finalized in order to build an instance.
         """
@@ -378,9 +415,12 @@ class APIInstance(BaseResource):
         new_inst.model_id = model.model_id
         new_inst.instance_finalized = False
         new_inst.instance_last_modified = datetime.utcnow()
+        new_inst.instance_etag = token_hex(16)
         new_inst.instance_samples_last_modified = datetime.utcnow()
+        new_inst.instance_samples_etag = token_hex(16)
 
         model.model_instances_last_modified = datetime.utcnow()
+        model.model_instances_etag = token_hex(16)
 
         # check if the request is complete
         if BI.INSTANCE_NAME in json_object:
@@ -393,8 +433,18 @@ class APIInstance(BaseResource):
         else:
             new_inst.instance_description = "created by " + me.user_name
 
-        # add the new instance
+        # add all model params as instance params:
         db.session.add(new_inst)
+
+        for p in model.params:
+            instance_parameter = ORMInstanceParameter()
+            instance_parameter.param_uuid = uuid1().bytes
+            instance_parameter.instance_id = new_inst.instance_id
+            instance_parameter.model_param_id = p.param_id
+            instance_parameter.param_value = None
+            db.session.add(instance_parameter)
+
+        # add the new instance
         db.session.commit()
 
         owner_role = ORMUserRoleInstance.query.first()
@@ -425,6 +475,7 @@ class APIInstance(BaseResource):
             },
             last_modified=new_inst.instance_last_modified,
             valid_seconds=LT_INSTANCE,
+            etag=new_inst.instance_etag,
         )
 
     @authenticated
@@ -447,7 +498,10 @@ class APIInstanceCollection(BaseResource):
         if instance.instance_finalized:
             valid = LT_INSTANCE_FINALIZED
         return SUCCESS(
-            "", last_modified=instance.instance_last_modified, valid_seconds=valid
+            "",
+            last_modified=instance.instance_last_modified,
+            valid_seconds=valid,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -475,7 +529,10 @@ class APIInstanceCollection(BaseResource):
             valid = LT_INSTANCE_FINALIZED
 
         return SUCCESS(
-            response, last_modified=instance.instance_last_modified, valid_seconds=valid
+            response,
+            last_modified=instance.instance_last_modified,
+            valid_seconds=valid,
+            etag=instance.instance_etag,
         )
 
     @authenticated
@@ -513,7 +570,9 @@ class APIInstanceCollection(BaseResource):
 
         if modified:
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
 
         db.session.commit()
 
@@ -542,6 +601,7 @@ class APIInstanceInferenceData(BaseResource):
                 "",
                 last_modified=instance.inference_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
+                etag=instance.inference_data.data_etag,
             )
 
     @authenticated
@@ -576,11 +636,15 @@ class APIInstanceInferenceData(BaseResource):
             newRequest.data_file_id = file_pers.file_id
             newRequest.data_uuid = uuid1().bytes
             newRequest.data_last_modified = datetime.utcnow()
+            newRequest.data_etag = token_hex(16)
+
             db.session.add(newRequest)
             db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
 
             instance.inference_data_id = newRequest.data_id
             db.session.commit()
@@ -614,6 +678,7 @@ class APIInstanceTrainingData(BaseResource):
                 "",
                 last_modified=instance.training_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
+                etag=instance.trainins_data.data_etag,
             )
 
     @authenticated
@@ -644,11 +709,14 @@ class APIInstanceTrainingData(BaseResource):
             newRequest.data_file_id = file_pers.file_id
             newRequest.data_uuid = new_uuid.bytes
             newRequest.data_last_modified = datetime.utcnow()
+            newRequest.data_etag = token_hex(16)
             db.session.add(newRequest)
             db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
+            instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
+            model.model_instances_etag = token_hex(16)
 
             instance.training_data_id = newRequest.data_id
             db.session.commit()

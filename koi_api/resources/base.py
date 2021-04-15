@@ -56,7 +56,7 @@ class BaseResource(Resource):
                 return False, ERR_AUTH("token not recognized"), None
 
             span = token_regex.span()
-            token_value = token_value[span[0]: span[1]]
+            token_value = token_value[span[0] : span[1]]
 
         else:
             return False, ERR_AUTH("no token send"), None
@@ -191,22 +191,35 @@ def instance_access(rights):
     return inner
 
 
+def comma_separated_params_to_list(param):
+    result = []
+    for val in param.split(","):
+        if val:
+            result.append(val)
+    return result
+
+
 def sample_filter(func):
     @functools.wraps(func)
     def wrapperS(self, *args, **kwargs):
-        filter_obsolete = None
-        filter_consumed = None
+        filter_include = None
+        filter_exclude = None
         try:
-            filter_obsolete = request.args.get(BS.SAMPLE_OBSOLETE, None, int)
-            filter_consumed = request.args.get(BS.SAMPLE_CONSUMED, None, int)
+            filter_include = request.args.getlist(BS.SAMPLE_TAGS_INCLUDE, str)
+            filter_exclude = request.args.getlist(BS.SAMPLE_TAGS_EXCLUDE, str)
+
+            if len(filter_include) == 1 and "," in filter_include[0]:
+                filter_include = comma_separated_params_to_list(filter_include[0])
+            if len(filter_exclude) == 1 and "," in filter_exclude[0]:
+                filter_exclude = comma_separated_params_to_list(filter_exclude[0])
         except ValueError:
             return ERR_BADR("illegal param")
 
         return func(
             self,
             *args,
-            filter_obsolete=filter_obsolete,
-            filter_consumed=filter_consumed,
+            filter_include=filter_include,
+            filter_exclude=filter_exclude,
             **kwargs
         )
 
@@ -228,8 +241,7 @@ def label_request_filter(func):
 
 
 def sample_access(func):
-    """get the sample specified by the sample uuid
-    """
+    """get the sample specified by the sample uuid"""
 
     @functools.wraps(func)
     def wrapperS(self, *args, instance, **kwargs):
@@ -248,8 +260,7 @@ def sample_access(func):
 
 
 def sample_data_access(func):
-    """get the sample data specified by the uuid
-    """
+    """get the sample data specified by the uuid"""
 
     @functools.wraps(func)
     def wrapperS(self, *args, sample, **kwargs):
@@ -268,8 +279,7 @@ def sample_data_access(func):
 
 
 def sample_label_access(func):
-    """get the sample label specified by the uuid
-    """
+    """get the sample label specified by the uuid"""
 
     @functools.wraps(func)
     def wrapperS(self, *args, sample, **kwargs):
@@ -288,8 +298,7 @@ def sample_label_access(func):
 
 
 def descriptor_access(func):
-    """get the descriptor specified by the uuid
-    """
+    """get the descriptor specified by the uuid"""
 
     @functools.wraps(func)
     def wrapperD(self, *args, instance, **kwargs):

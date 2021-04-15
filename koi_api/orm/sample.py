@@ -16,6 +16,14 @@
 from ..orm import db
 
 
+association_table = db.Table(
+    "association_tags",
+    db.Model.metadata,
+    db.Column("sample_id", db.Integer, db.ForeignKey("sample.sample_id")),
+    db.Column("tag_id", db.Integer, db.ForeignKey("sample_tag.tag_id")),
+)
+
+
 class ORMSample(db.Model):
     __tablename__ = "sample"
     __table_args__ = (
@@ -24,10 +32,9 @@ class ORMSample(db.Model):
     sample_id = db.Column(db.Integer, primary_key=True, unique=True)
     sample_uuid = db.Column(db.Binary(16))
     sample_finalized = db.Column(db.Boolean)
-    sample_consumed = db.Column(db.Boolean)
-    sample_obsolete = db.Column(db.Boolean)
 
     sample_last_modified = db.Column(db.DateTime, nullable=False)
+    sample_etag = db.Column(db.String(50))
 
     data = db.relationship(
         "ORMSampleData",
@@ -49,6 +56,8 @@ class ORMSample(db.Model):
         "ORMLabelRequest", back_populates="sample", lazy="dynamic"
     )
 
+    tags = db.relationship("ORMSampleTag", secondary=association_table)
+
 
 class ORMSampleData(db.Model):
     __tablename__ = "sampledata"
@@ -59,6 +68,7 @@ class ORMSampleData(db.Model):
     data_uuid = db.Column(db.Binary(16))
 
     data_last_modified = db.Column(db.DateTime, nullable=False)
+    data_etag = db.Column(db.String(50))
 
     data_key = db.Column(db.String(500))
 
@@ -76,6 +86,7 @@ class ORMSampleLabel(db.Model):
     label_uuid = db.Column(db.Binary(16))
 
     label_last_modified = db.Column(db.DateTime, nullable=False)
+    label_etag = db.Column(db.String(50))
 
     label_key = db.Column(db.String(500))
 
@@ -84,3 +95,13 @@ class ORMSampleLabel(db.Model):
 
     file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")
+
+
+class ORMSampleTag(db.Model):
+    __tablename__ = "sample_tag"
+
+    tag_id = db.Column(db.Integer, primary_key=True, unique=True)
+    tag_name = db.Column(db.String(500))
+
+    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
+    instance = db.relationship("ORMInstance", back_populates="tags")

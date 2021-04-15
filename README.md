@@ -1,9 +1,26 @@
 # About
 As part of the [KOI-System](https://github.com/koi-learning) *koi-api* manages all objects registered in the system.
 All other components([koi-core](https://github.com/koi-learning/koi-core), [koi-pwa](https://guthub.com/koi-learning/koi-pwa)) communicate over an REST-API provided by this component.
+
+# What is KOI?
+The *KOI-System* is framework for lifecycle-management of machine learning solutions.
+As such it allows the user to create, train, and deploy ML-solutions.
+
+The lifecycle-management involves:
+- Continuous Training of ML-Models
+- Collecting new Samples from multiple sources
+- Control visibility and access through user account management and roles
+- Distributed training using multiple workers  
+
 "*KOI*" is an abbreviation of the german name "Kognitive Objekt-orientierte Intelligenz", which translates to "cognitive object-oriented intelligence".
 
+To simplify the development and deployment of different ML-solutions, the system defines three types of objects: 
+- **Models**
+- **Instances**
+- **Samples**
+
 The project is written in Python and uses Flask.
+It does not depend on any ML-Framework and enables the user to choose what's best for their Model.
 # Setup
 ## Local Installation
 You can install *koi-api* on your system by running:
@@ -27,3 +44,4 @@ The source code is licensed under the terms of LGPLv3, please see [COPYING](COPY
 If you are working with the KOI-System and find any bugs, please report them as an issue in the respective projects on Github.com.
 
 If you want to contribute to this project, take a look at the open issues and send us your pull-requests. 
+

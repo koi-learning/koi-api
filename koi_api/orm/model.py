@@ -13,6 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.parameters import ORMModelParameter
+from typing import Iterable
 from ..orm import db
 
 
@@ -29,6 +31,8 @@ class ORMModel(db.Model):
     model_finalized = db.Column(db.Boolean)
     model_last_modified = db.Column(db.DateTime, nullable=False)
     model_instances_last_modified = db.Column(db.DateTime, nullable=False)
+    model_etag = db.Column(db.String(50))
+    model_instances_etag = db.Column(db.String(50))
 
     # blob containing the model code
     code_id = db.Column(db.Integer, db.ForeignKey("modelcode.code_id"))
@@ -50,7 +54,7 @@ class ORMModel(db.Model):
     )
 
     # model parameters
-    params = db.relationship("ORMModelParameter", lazy="dynamic", cascade="all, delete")
+    params: Iterable[ORMModelParameter] = db.relationship("ORMModelParameter", lazy="dynamic", cascade="all, delete")
 
     # access granted to users
     granted_users = db.relationship(
