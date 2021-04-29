@@ -24,6 +24,7 @@ from ..resources.base import (
     instance_access,
     json_request,
 )
+from .lifetime import LT_MODEL, LT_MODEL_FINALIZED
 from ..common.string_constants import BODY_ROLE as BR, BODY_PARAM as BP
 from ..common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR
 from ..orm.parameters import ORMInstanceParameter
@@ -32,7 +33,23 @@ from ..orm.parameters import ORMInstanceParameter
 class APIModelParameter(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
+    def head(self, model_uuid, model, me):
+        valid = LT_MODEL
+        if model.model_finalized:
+            valid = LT_MODEL_FINALIZED
+        return SUCCESS(
+            "",
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
+
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me):
+        valid = LT_MODEL
+        if model.model_finalized:
+            valid = LT_MODEL_FINALIZED
         response = [
             {
                 BP.PARAM_UUID: UUID(bytes=param.param_uuid).hex,
@@ -43,7 +60,12 @@ class APIModelParameter(BaseResource):
             }
             for param in model.params.all()
         ]
-        return SUCCESS(response)
+        return SUCCESS(
+            response,
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -64,7 +86,24 @@ class APIModelParameter(BaseResource):
 class APIModelParameterCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
+    def head(self, model_uuid, model, me):
+        valid = LT_MODEL
+        if model.model_finalized:
+            valid = LT_MODEL_FINALIZED
+        return SUCCESS(
+            "",
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
+
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me, param_uuid):
+        valid = LT_MODEL
+        if model.model_finalized:
+            valid = LT_MODEL_FINALIZED
+
         param = model.params.filter_by(param_uuid=UUID(param_uuid).bytes).one_or_none()
         if param is None:
             return ERR_NOFO()
@@ -76,7 +115,12 @@ class APIModelParameterCollection(BaseResource):
             BP.PARAM_CONSTRAINT: param.param_constraint,
             BP.PARAM_TYPE: param.param_type,
         }
-        return SUCCESS(response)
+        return SUCCESS(
+            response,
+            last_modified=model.model_last_modified,
+            valid_seconds=valid,
+            etag=model.model_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
