@@ -62,7 +62,7 @@ class APIInstanceDescriptor(BaseResource):
         self, model, model_uuid, me, instance, instance_uuid, page_offset, page_limit
     ):
         descriptors = (
-            instance.instance_descriptors.offset(page_offset).limit(page_limit).all()
+            instance.instance_descriptors.limit(page_limit).offset(page_offset).all()
         )
 
         response = [

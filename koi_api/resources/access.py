@@ -44,7 +44,7 @@ class APIGeneralAccess(BaseResource):
         Get all access rights granted in general
         """
         granted_users = (
-            ORMAccessGeneral.query.offset(page_offset).limit(page_limit).all()
+            ORMAccessGeneral.query.limit(page_limit).offset(page_offset).all()
         )
 
         response = [
@@ -339,7 +339,7 @@ class APIInstanceAccess(BaseResource):
         granted_users = instance.granted_users.join(ORMAccessInstance.user).join(
             ORMAccessInstance.role
         )
-        granted_users = granted_users.offset(page_offset).limit(page_limit).all()
+        granted_users = granted_users.limit(page_limit).offset(page_offset).all()
 
         if len(granted_users) > self.MAX_PAGE:
             return ERR_BADR()

@@ -28,7 +28,7 @@ class APIUserRoleGeneral(BaseResource):
     @user_access([])
     def get(self, page_offset, page_limit, me):
         # get the roles
-        roles = ORMUserRoleGeneral.query.offset(page_offset).limit(page_limit).all()
+        roles = ORMUserRoleGeneral.query.limit(page_limit).offset(page_offset).all()
 
         # construct the response
         response = [
@@ -244,7 +244,7 @@ class APIUserRoleModel(BaseResource):
     @user_access([])
     def get(self, me, page_offset, page_limit):
         # get the roles
-        roles = ORMUserRoleModel.query.offset(page_offset).limit(page_limit).all()
+        roles = ORMUserRoleModel.query.limit(page_limit).offset(page_offset).all()
 
         # construct the response
         response = [
@@ -479,7 +479,7 @@ class APIUserRoleInstance(BaseResource):
     @user_access([])
     def get(self, page_offset, page_limit, me):
         # get the roles
-        roles = ORMUserRoleInstance.query.offset(page_offset).limit(page_limit).all()
+        roles = ORMUserRoleInstance.query.limit(page_limit).offset(page_offset).all()
 
         # construct the response
         response = [

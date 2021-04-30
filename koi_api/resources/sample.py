@@ -94,7 +94,7 @@ class APISample(BaseResource):
         )
 
         # paging
-        samples = samples.offset(page_offset).limit(page_limit).all()
+        samples = samples.limit(page_limit).offset(page_offset).all()
 
         response = [
             {
@@ -322,7 +322,7 @@ class APISampleData(BaseResource):
         page_offset,
     ):
 
-        data = sample.data.offset(page_offset).limit(page_limit).all()
+        data = sample.data.limit(page_limit).offset(page_offset).all()
 
         response = [
             {
@@ -594,7 +594,7 @@ class APISampleLabel(BaseResource):
         page_offset,
     ):
 
-        data = sample.label.offset(page_offset).limit(page_limit).all()
+        data = sample.label.limit(page_limit).offset(page_offset).all()
         response = [
             {
                 BS.SAMPLE_LABEL_UUID: UUID(bytes=d.label_uuid).hex,

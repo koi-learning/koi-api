@@ -49,7 +49,7 @@ class APIUser(BaseResource):
         """
         Get a list of all users
         """
-        users = ORMUser.query.offset(page_offset).limit(page_limit).all()
+        users = ORMUser.query.limit(page_limit).offset(page_offset).all()
 
         return SUCCESS(
             [
