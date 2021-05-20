@@ -58,6 +58,11 @@ class ORMSample(db.Model):
 
     tags = db.relationship("ORMSampleTag", secondary=association_table)
 
+    def purge_for_merge(self):
+        labels_to_pruge = self.label.filter_by(mergeable=False).all()
+        for label in labels_to_pruge:
+            db.session.delete(label)
+
 
 class ORMSampleData(db.Model):
     __tablename__ = "sampledata"
@@ -95,6 +100,8 @@ class ORMSampleLabel(db.Model):
 
     file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")
+
+    mergable = db.Column(db.Boolean)
 
 
 class ORMSampleTag(db.Model):
