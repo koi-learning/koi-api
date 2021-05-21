@@ -62,6 +62,7 @@ class ORMSample(db.Model):
         labels_to_pruge = self.label.filter_by(mergeable=False).all()
         for label in labels_to_pruge:
             db.session.delete(label)
+        db.session.commit()
 
 
 class ORMSampleData(db.Model):
