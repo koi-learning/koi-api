@@ -31,6 +31,7 @@ from .instance import (
     APIInstanceDescriptor,
     APIInstanceDescriptorCollection,
     APIInstanceDescriptorFile,
+    APIInstanceMerge,
 )
 from .sample import (
     APISample,
@@ -105,6 +106,10 @@ def init_app(app):
     api.add_resource(
         APIInstanceCollection,
         "/api/model/<string:model_uuid>/instance/<string:instance_uuid>",
+    )
+    api.add_resource(
+        APIInstanceMerge,
+        "/api/model/<string:model_uuid>/instance/<string:instance_uuid>/merge",
     )
     api.add_resource(
         APIInstanceTrainingData,
