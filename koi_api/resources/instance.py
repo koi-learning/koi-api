@@ -736,3 +736,80 @@ class APIInstanceTrainingData(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me):
         return ERR_FORB()
+
+
+class APIInstanceMerge(BaseResource):
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_EDIT_INSTANCE, BR.ROLE_SEE_INSTANCE])
+    @json_request
+    def post(self, model_uuid, model, instance_uuid, instance, me, json_object):
+        # only finalized instances can be used for merging
+        if not instance.instance_finalized:
+            return ERR_FORB("instance has to be finalized!")
+
+        # collect all known descriptors
+        known_descriptors = dict()
+
+        descriptors = instance.instance_descriptors.all()
+
+        for desc in descriptors:
+            key = desc.descriptor_key
+            data_raw = persistence.get_file(desc.file)
+            if key not in known_descriptors.keys():
+                known_descriptors[key] = [data_raw, ]
+            else:
+                known_descriptors[key].append(data_raw)
+
+        new_descriptors = dict()
+
+        # check the instances for merging
+        for inst_uuid in json_object[BI.INSTANCE_UUID]:
+            inst = ORMInstance.query.filter_by(instance_uuid=inst_uuid).one_or_none()
+            if inst is None:
+                continue
+
+            # collect the descriptor of this instance and check if we already have them
+            descriptors = inst.instance_descriptors.all()
+
+            for desc in descriptors:
+                key = desc.descriptor_key
+                data_raw = persistence.get_file(desc.file)
+
+                if key in known_descriptors.keys():
+                    if data_raw in known_descriptors[key]:
+                        continue
+
+                if key not in new_descriptors.keys():
+                    new_descriptors[key] = [data_raw, ]
+                else:
+                    if data_raw not in new_descriptors[key]:
+                        new_descriptors[key].append(data_raw)
+
+            # transfer all samples to the new merged instance
+            samples = inst.samples.all()
+
+            for sample in samples:
+                # throw away unmergeable labels!
+                sample.purge_for_merge()
+
+                # transfer ownership of the sample
+                sample.instance_id = instance.instance_id
+
+            # mark the current instance as merged
+            inst.instance_merged_id = instance.instance_id
+
+        # add the new descriptors to the merged instance
+        for key, values in new_descriptors.items():
+            new_desc = ORMInstanceDescriptor()
+            new_desc.descriptor_key = key
+            new_desc.descriptor_instance_id = instance.instance_id
+            new_desc.descriptor_uuid = uuid1()
+
+            file_pers = persistence.store_file(values)
+
+            new_desc.descriptor_file_id = file_pers.file_id
+            db.session.add(file_pers)
+            db.session.add(new_desc)
+        
+        db.session.commit()

@@ -642,6 +642,13 @@ class APISampleLabel(BaseResource):
         else:
             new_label.label_key = "unnamed label"
 
+        # mark this label as not mergable if the sample is already finalized
+        if sample.sample_finalized:
+            new_label.mergable = False
+        else:
+            new_label.mergable = True
+
+        # set the last modified fields!
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         new_label.label_last_modified = datetime.utcnow()
