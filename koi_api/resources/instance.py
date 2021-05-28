@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.sample import ORMAssociationTags, ORMSampleTag
 from flask.helpers import make_response
 from koi_api.orm.parameters import ORMInstanceParameter
 from koi_api.orm.model import ORMModel
@@ -757,7 +758,9 @@ class APIInstanceMerge(BaseResource):
             key = desc.descriptor_key
             data_raw = persistence.get_file(desc.file)
             if key not in known_descriptors.keys():
-                known_descriptors[key] = [data_raw, ]
+                known_descriptors[key] = [
+                    data_raw,
+                ]
             else:
                 known_descriptors[key].append(data_raw)
 
@@ -765,8 +768,16 @@ class APIInstanceMerge(BaseResource):
 
         # check the instances for merging
         for inst_uuid in json_object[BI.INSTANCE_UUID]:
-            inst = ORMInstance.query.filter_by(instance_uuid=inst_uuid).one_or_none()
+            inst = ORMInstance.query.filter_by(
+                instance_uuid=UUID(inst_uuid).bytes
+            ).one_or_none()
+
+            # check if the instance uuid is valid
             if inst is None:
+                continue
+
+            # check if the instance is not already merged
+            if inst.instance_merged_id is not None:
                 continue
 
             # collect the descriptor of this instance and check if we already have them
@@ -781,7 +792,9 @@ class APIInstanceMerge(BaseResource):
                         continue
 
                 if key not in new_descriptors.keys():
-                    new_descriptors[key] = [data_raw, ]
+                    new_descriptors[key] = [
+                        data_raw,
+                    ]
                 else:
                     if data_raw not in new_descriptors[key]:
                         new_descriptors[key].append(data_raw)
@@ -795,6 +808,37 @@ class APIInstanceMerge(BaseResource):
 
                 # transfer ownership of the sample
                 sample.instance_id = instance.instance_id
+
+                # generate a new uuid as this is needed in our hirachical layout
+                sample.sample_uuid = uuid1().bytes
+
+            # move all tags to the new instance
+            tags_to_move = inst.tags.all()
+            for tag in tags_to_move:
+                existing_tags = instance.tags.all()
+                matched = False
+                for ext_tag in existing_tags:
+                    if ext_tag.tag_name == tag.tag_name:
+                        matched = True
+                        break
+
+                if not matched:
+                    new_tag = ORMSampleTag()
+                    new_tag.instance_id = instance.instance_id
+                    new_tag.tag_name = tag.tag_name
+                    db.session.add(new_tag)
+            db.session.commit()
+
+            assoctiations = ORMAssociationTags.query.filter_by(mergeable=True).join(ORMAssociationTags.tag).filter_by(instance_id=inst.instance_id)
+
+            existing_tags = instance.tags.all()
+
+            for assoc in assoctiations:
+                for ext_tag in existing_tags:
+                    if assoc.tag.tag_name == ext_tag.tag_name:
+                        assoc.tag_id = ext_tag.tag_id
+                        break
+            db.session.commit()
 
             # mark the current instance as merged
             inst.instance_merged_id = instance.instance_id
@@ -811,5 +855,5 @@ class APIInstanceMerge(BaseResource):
             new_desc.descriptor_file_id = file_pers.file_id
             db.session.add(file_pers)
             db.session.add(new_desc)
-        
+
         db.session.commit()
