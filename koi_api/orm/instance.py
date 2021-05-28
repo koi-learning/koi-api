@@ -13,8 +13,6 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from koi_api.orm.parameters import ORMInstanceParameter
-from typing import Iterable
 from ..orm import db
 
 
