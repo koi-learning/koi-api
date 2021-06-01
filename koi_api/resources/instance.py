@@ -812,7 +812,7 @@ class APIInstanceMerge(BaseResource):
                 # generate a new uuid as this is needed in our hirachical layout
                 sample.sample_uuid = uuid1().bytes
 
-            # move all tags to the new instance
+            # move all tags to the new instance that are not already there
             tags_to_move = inst.tags.all()
             for tag in tags_to_move:
                 existing_tags = instance.tags.all()
@@ -829,11 +829,18 @@ class APIInstanceMerge(BaseResource):
                     db.session.add(new_tag)
             db.session.commit()
 
-            assoctiations = ORMAssociationTags.query.filter_by(mergeable=True).join(ORMAssociationTags.tag).filter_by(instance_id=inst.instance_id)
+            # get all associations from the merging instance that are mergeable
+            associations = (
+                ORMAssociationTags.query.filter_by(mergeable=True)
+                .join(ORMAssociationTags.tag)
+                .filter_by(instance_id=inst.instance_id)
+                .all()
+            )
 
+            # get the list of all known tags from the target instance
             existing_tags = instance.tags.all()
 
-            for assoc in assoctiations:
+            for assoc in associations:
                 for ext_tag in existing_tags:
                     if assoc.tag.tag_name == ext_tag.tag_name:
                         assoc.tag_id = ext_tag.tag_id

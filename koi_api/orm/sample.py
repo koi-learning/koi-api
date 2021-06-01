@@ -62,15 +62,18 @@ class ORMSample(db.Model):
     tags = db.relationship("ORMAssociationTags", back_populates="sample", lazy="dynamic")
 
     def purge_for_merge(self):
+        # collect all labels that will be lost ofter merging
         labels_to_pruge = self.label.filter_by(mergeable=False).all()
         for label in labels_to_pruge:
             db.session.delete(label)
 
-        tags_assoc_to_prune = self.tags.filter_by(mergeable=True).all()
+        # collect all associations that will be lost after merging
+        tags_assoc_to_prune = self.tags.filter_by(mergeable=False).all()
         for tag in tags_assoc_to_prune:
             db.session.delete(tag)
         db.session.commit()
 
+        # drop all samples that have lost all associations
         for tag in self.instance.tags:
             if tag.samples is None:
                 db.session.delete(tag)
