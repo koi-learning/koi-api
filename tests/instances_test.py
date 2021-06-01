@@ -13,12 +13,20 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 import koi_core as koi
+from zipfile import ZipFile
+from io import BytesIO
 
 
 class Dummy:
     def toBytes(self):
-        f = open("K:\\koi_model_code.zip", "rb")
-        return f.read()
+        data = BytesIO()
+        f = ZipFile(data, "w")
+        model_file = f.open("__model__.py", "w")
+        model_file.write(b"")
+        model_file.close()
+        f.close()
+
+        return data.getvalue()
 
 
 def test_instance_merging(testserver):
