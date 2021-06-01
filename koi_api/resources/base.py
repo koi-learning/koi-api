@@ -56,7 +56,7 @@ class BaseResource(Resource):
                 return False, ERR_AUTH("token not recognized"), None
 
             span = token_regex.span()
-            token_value = token_value[span[0] : span[1]]
+            token_value = token_value[span[0]: span[1]]
 
         else:
             return False, ERR_AUTH("no token send"), None

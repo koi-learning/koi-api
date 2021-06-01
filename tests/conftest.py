@@ -1,1 +1,1 @@
-from .fixtures import testserver
+from .fixtures import testserver  # noqa F401
