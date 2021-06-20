@@ -373,7 +373,7 @@ class APISampleData(BaseResource):
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         new_data.data_last_modified = datetime.utcnow()
-        new_data.date_etag = token_hex(16)
+        new_data.data_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
