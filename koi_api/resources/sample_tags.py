@@ -23,7 +23,7 @@ from .base import (
     instance_access,
 )
 from .base import sample_access, json_request
-from ..orm.sample import ORMSampleTag
+from ..orm.sample import ORMAssociationTags, ORMSampleTag
 from ..common.return_codes import ERR_FORB, SUCCESS
 from ..common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
 from .lifetime import LT_COLLECTION
@@ -53,7 +53,7 @@ class APISampleTag(BaseResource):
         """
         tags = sample.tags
 
-        response = [{BT.TAG_NAME: tag.tag_name} for tag in tags]
+        response = [{BT.TAG_NAME: tag.tag.tag_name} for tag in tags]
 
         return SUCCESS(
             response,
@@ -92,8 +92,20 @@ class APISampleTag(BaseResource):
                 current_tag = all_tags[tag[BT.TAG_NAME]]
 
                 # check that the current tag is not already asigned
-                if current_tag not in sample.tags:
-                    sample.tags.append(current_tag)
+                sample_tags = [t.tag for t in sample.tags]
+                if current_tag not in sample_tags:
+                    # generate new association between sample and tag
+                    new_assoc = ORMAssociationTags()
+                    new_assoc.sample_id = sample.sample_id
+                    new_assoc.tag_id = current_tag.tag_id
+
+                    # check if this association is to be kept when merging?
+                    if sample.sample_finalized:
+                        new_assoc.mergeable = False
+                    else:
+                        new_assoc.mergeable = True
+
+                    db.session.add(new_assoc)
                     changed = True
             else:
 
@@ -102,7 +114,21 @@ class APISampleTag(BaseResource):
                 new_tag.tag_name = tag[BT.TAG_NAME]
                 new_tag.instance_id = instance.instance_id
                 db.session.add(new_tag)
-                sample.tags.append(new_tag)
+                db.session.commit()
+
+                # generate new association between sample and tag
+                new_assoc = ORMAssociationTags()
+                new_assoc.sample_id = sample.sample_id
+                new_assoc.tag_id = new_tag.tag_id
+
+                # check if this association is to be kept when merging?
+                if sample.sample_finalized:
+                    new_assoc.mergeable = False
+                else:
+                    new_assoc.mergeable = True
+
+                db.session.add(new_assoc)
+
                 changed = True
 
             # commit changes made in this run
@@ -150,7 +176,13 @@ class APISampleTag(BaseResource):
         me,
     ):
         # drop all tags
-        sample.tags = []
+        tags = sample.tags
+        for tag_assoc in tags:
+            db.session.delete(tag_assoc)
+        for tag in instance.tags:
+            if tag.samples is None:
+                db.session.delete(tag)
+
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
         sample.sample_last_modified = datetime.utcnow()
@@ -172,8 +204,12 @@ class APISampleTagCollection(BaseResource):
         tags = sample.tags
 
         for t in tags:
-            if t.tag_name == tag:
-                sample.tags.remove(t)
+            if t.tag.tag_name == tag:
+                db.session.delete(t)
+
+        for tag in instance.tags:
+            if tag.samples is None:
+                db.session.delete(tag)
 
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)

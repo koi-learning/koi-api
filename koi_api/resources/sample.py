@@ -373,7 +373,7 @@ class APISampleData(BaseResource):
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         new_data.data_last_modified = datetime.utcnow()
-        new_data.date_etag = token_hex(16)
+        new_data.data_etag = token_hex(16)
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
@@ -642,6 +642,13 @@ class APISampleLabel(BaseResource):
         else:
             new_label.label_key = "unnamed label"
 
+        # mark this label as not mergeable if the sample is already finalized
+        if sample.sample_finalized:
+            new_label.mergeable = False
+        else:
+            new_label.mergeable = True
+
+        # set the last modified fields!
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         new_label.label_last_modified = datetime.utcnow()

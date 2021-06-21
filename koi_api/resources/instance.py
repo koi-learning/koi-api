@@ -13,6 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from koi_api.orm.sample import ORMAssociationTags, ORMSampleTag
 from flask.helpers import make_response
 from koi_api.orm.parameters import ORMInstanceParameter
 from koi_api.orm.model import ORMModel
@@ -736,3 +737,130 @@ class APIInstanceTrainingData(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me):
         return ERR_FORB()
+
+
+class APIInstanceMerge(BaseResource):
+    @authenticated
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_EDIT_INSTANCE, BR.ROLE_SEE_INSTANCE])
+    @json_request
+    def post(self, model_uuid, model, instance_uuid, instance, me, json_object):
+        # only finalized instances can be used for merging
+        if not instance.instance_finalized:
+            return ERR_FORB("instance has to be finalized!")
+
+        # collect all known descriptors
+        known_descriptors = dict()
+
+        descriptors = instance.instance_descriptors.all()
+
+        for desc in descriptors:
+            key = desc.descriptor_key
+            data_raw = persistence.get_file(desc.file)
+            if key not in known_descriptors.keys():
+                known_descriptors[key] = [
+                    data_raw,
+                ]
+            else:
+                known_descriptors[key].append(data_raw)
+
+        new_descriptors = dict()
+
+        # check the instances for merging
+        for inst_uuid in json_object[BI.INSTANCE_UUID]:
+            inst = ORMInstance.query.filter_by(
+                instance_uuid=UUID(inst_uuid).bytes
+            ).one_or_none()
+
+            # check if the instance uuid is valid
+            if inst is None:
+                continue
+
+            # check if the instance is not already merged
+            if inst.instance_merged_id is not None:
+                continue
+
+            # collect the descriptor of this instance and check if we already have them
+            descriptors = inst.instance_descriptors.all()
+
+            for desc in descriptors:
+                key = desc.descriptor_key
+                data_raw = persistence.get_file(desc.file)
+
+                if key in known_descriptors.keys():
+                    if data_raw in known_descriptors[key]:
+                        continue
+
+                if key not in new_descriptors.keys():
+                    new_descriptors[key] = [
+                        data_raw,
+                    ]
+                else:
+                    if data_raw not in new_descriptors[key]:
+                        new_descriptors[key].append(data_raw)
+
+            # transfer all samples to the new merged instance
+            samples = inst.samples.all()
+
+            for sample in samples:
+                # throw away unmergeable labels!
+                sample.purge_for_merge()
+
+                # transfer ownership of the sample
+                sample.instance_id = instance.instance_id
+
+                # generate a new uuid as this is needed in our hirachical layout
+                sample.sample_uuid = uuid1().bytes
+
+            # move all tags to the new instance that are not already there
+            tags_to_move = inst.tags.all()
+            for tag in tags_to_move:
+                existing_tags = instance.tags.all()
+                matched = False
+                for ext_tag in existing_tags:
+                    if ext_tag.tag_name == tag.tag_name:
+                        matched = True
+                        break
+
+                if not matched:
+                    new_tag = ORMSampleTag()
+                    new_tag.instance_id = instance.instance_id
+                    new_tag.tag_name = tag.tag_name
+                    db.session.add(new_tag)
+            db.session.commit()
+
+            # get all associations from the merging instance that are mergeable
+            associations = (
+                ORMAssociationTags.query.filter_by(mergeable=True)
+                .join(ORMAssociationTags.tag)
+                .filter_by(instance_id=inst.instance_id)
+                .all()
+            )
+
+            # get the list of all known tags from the target instance
+            existing_tags = instance.tags.all()
+
+            for assoc in associations:
+                for ext_tag in existing_tags:
+                    if assoc.tag.tag_name == ext_tag.tag_name:
+                        assoc.tag_id = ext_tag.tag_id
+                        break
+            db.session.commit()
+
+            # mark the current instance as merged
+            inst.instance_merged_id = instance.instance_id
+
+        # add the new descriptors to the merged instance
+        for key, values in new_descriptors.items():
+            new_desc = ORMInstanceDescriptor()
+            new_desc.descriptor_key = key
+            new_desc.descriptor_instance_id = instance.instance_id
+            new_desc.descriptor_uuid = uuid1()
+
+            file_pers = persistence.store_file(values)
+
+            new_desc.descriptor_file_id = file_pers.file_id
+            db.session.add(file_pers)
+            db.session.add(new_desc)
+
+        db.session.commit()

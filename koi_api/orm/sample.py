@@ -16,12 +16,15 @@
 from ..orm import db
 
 
-association_table = db.Table(
-    "association_tags",
-    db.Model.metadata,
-    db.Column("sample_id", db.Integer, db.ForeignKey("sample.sample_id")),
-    db.Column("tag_id", db.Integer, db.ForeignKey("sample_tag.tag_id")),
-)
+class ORMAssociationTags(db.Model):
+    __tablename__ = "tags_association"
+    assoc_id = db.Column(db.Integer, primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey("sample_tag.tag_id"))
+    sample_id = db.Column(db.Integer, db.ForeignKey("sample.sample_id"))
+    mergeable = db.Column(db.Boolean)
+
+    sample = db.relationship("ORMSample", back_populates="tags")
+    tag = db.relationship("ORMSampleTag", back_populates="samples")
 
 
 class ORMSample(db.Model):
@@ -56,7 +59,25 @@ class ORMSample(db.Model):
         "ORMLabelRequest", back_populates="sample", lazy="dynamic"
     )
 
-    tags = db.relationship("ORMSampleTag", secondary=association_table)
+    tags = db.relationship("ORMAssociationTags", back_populates="sample", lazy="dynamic")
+
+    def purge_for_merge(self):
+        # collect all labels that will be lost ofter merging
+        labels_to_pruge = self.label.filter_by(mergeable=False).all()
+        for label in labels_to_pruge:
+            db.session.delete(label)
+
+        # collect all associations that will be lost after merging
+        tags_assoc_to_prune = self.tags.filter_by(mergeable=False).all()
+        for tag in tags_assoc_to_prune:
+            db.session.delete(tag)
+        db.session.commit()
+
+        # drop all samples that have lost all associations
+        for tag in self.instance.tags:
+            if tag.samples is None:
+                db.session.delete(tag)
+        db.session.commit()
 
 
 class ORMSampleData(db.Model):
@@ -96,6 +117,8 @@ class ORMSampleLabel(db.Model):
     file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
     file = db.relationship("ORMFile", cascade="all, delete")
 
+    mergeable = db.Column(db.Boolean)
+
 
 class ORMSampleTag(db.Model):
     __tablename__ = "sample_tag"
@@ -105,3 +128,5 @@ class ORMSampleTag(db.Model):
 
     instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
     instance = db.relationship("ORMInstance", back_populates="tags")
+
+    samples = db.relationship("ORMAssociationTags", back_populates="tag")

@@ -13,8 +13,6 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from koi_api.orm.parameters import ORMInstanceParameter
-from typing import Iterable
 from ..orm import db
 
 
@@ -36,12 +34,15 @@ class ORMInstance(db.Model):
     instance_etag = db.Column(db.String(50))
     instance_samples_etag = db.Column(db.String(50))
 
+    instance_merged_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
+    instance_merged = db.relationship("ORMInstance")
+
     # the associated model
     model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
     model = db.relationship("ORMModel", back_populates="instances")
 
-    # all samples available to this instance
-    params: Iterable[ORMInstanceParameter] = db.relationship(
+    # all parameters available to this instance
+    params = db.relationship(
         "ORMInstanceParameter",
         back_populates="instance",
         lazy="dynamic",
