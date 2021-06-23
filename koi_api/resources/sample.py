@@ -85,13 +85,22 @@ class APISample(BaseResource):
         if len(filter_include) > 0:
             # filter includes
             samples = samples.filter(
-                ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_include))
+                ORMSample.tags.any(
+                    ORMSampleTag.tag_name.in_(filter_include),
+                    sample_id=ORMSample.sample_id,
+                    tag_id=ORMSampleTag.tag_id,
+                )
             )
 
-        # filter excludes
-        samples = samples.filter(
-            ~ORMSample.tags.any(ORMSampleTag.tag_name.in_(filter_exclude))
-        )
+        if len(filter_exclude) > 0:
+            # filter excludes
+            samples = samples.filter(
+                ~ORMSample.tags.any(
+                    ORMSampleTag.tag_name.in_(filter_exclude),
+                    sample_id=ORMSample.sample_id,
+                    tag_id=ORMSampleTag.tag_id,
+                )
+            )
 
         # paging
         samples = samples.offset(page_offset).limit(page_limit).all()
