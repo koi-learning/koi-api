@@ -104,6 +104,7 @@ class APIInstanceParameter(BaseResource):
         response = [
             {
                 BP.PARAM_UUID_VALUE: UUID(bytes=param.param_uuid).hex,
+                BP.PARAM_UUID: UUID(bytes=param.model_param.param_uuid),
                 BP.PARAM_VALUE: param.param_value,
                 BP.PARAM_NAME: param.model_param.param_name,
                 BP.PARAM_DESCRIPTION: param.model_param.param_description,
