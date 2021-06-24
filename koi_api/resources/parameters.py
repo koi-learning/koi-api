@@ -119,12 +119,12 @@ class APIInstanceParameter(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
-    def post(self, model_uuid, model, instance_uuid, instance, me, json_oject):
+    def post(self, model_uuid, model, instance_uuid, instance, me, json_object):
         model_param_uuid = None
 
-        if BP.PARAM_UUID in json_oject:
+        if BP.PARAM_UUID in json_object:
             try:
-                model_param_uuid = UUID(json_oject[BP.PARAM_UUID])
+                model_param_uuid = UUID(json_object[BP.PARAM_UUID])
             except ValueError:
                 return ERR_BADR("misformed field:" + BP.PARAM_UUID)
         else:
@@ -138,9 +138,9 @@ class APIInstanceParameter(BaseResource):
             return ERR_NOFO("model parameter is unknown")
 
         instance_param_value = ""
-        if BP.PARAM_VALUE in json_request:
+        if BP.PARAM_VALUE in json_object:
             try:
-                instance_param_value = json_oject[BP.PARAM_VALUE]
+                instance_param_value = json_object[BP.PARAM_VALUE]
             except ValueError:
                 return ERR_BADR()
 
