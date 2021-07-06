@@ -32,7 +32,10 @@ def test_instance_merging(testserver):
     inst2.finalized = True
 
     # give them some descriptors
-    # TODO
+    inst1.descriptors["c"].append("1")
+    inst1.descriptors["c"].append("2")
+    inst2.descriptors["c"].append("2")
+    inst2.descriptors["c"].append("3")
 
     # create samples for these instances
     sample1 = inst1.new_sample()
