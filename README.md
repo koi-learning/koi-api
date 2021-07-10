@@ -3,7 +3,7 @@ As part of the [KOI-System](https://github.com/koi-learning), *koi-api* manages 
 All other components([koi-core](https://github.com/koi-learning/koi-core), [koi-pwa](https://guthub.com/koi-learning/koi-pwa)) communicate over an REST-API provided by this component.
 
 # What is KOI?
-The *KOI-System* is a framework for the lifecycle management of machine learning solutions.
+The *KOI-System* is a framework for the lifecycle management and deployment of machine learning solutions.
 As such, it allows the user to create, train, and deploy ML solutions.
 
 The lifecycle management involves:
