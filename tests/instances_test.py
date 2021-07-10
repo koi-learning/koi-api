@@ -32,7 +32,13 @@ def test_instance_merging(testserver):
     inst2.finalized = True
 
     # give them some descriptors
-    # TODO
+    inst1.descriptors["c"].append("1")
+    inst1.descriptors["c"].append("2")
+    inst2.descriptors["c"].append("2")
+    inst2.descriptors["c"].append("3")
+
+    inst1.descriptors["a"].append("1")
+    inst2.descriptors["b"].append("2")
 
     # create samples for these instances
     sample1 = inst1.new_sample()
@@ -63,6 +69,16 @@ def test_instance_merging(testserver):
     # merge and get the samples
     inst3.merge([inst1, inst2])
     samples = list(inst3.get_samples())
+
+    # get the descriptors after merging
+    desc_a = [x.raw.decode() for x in inst3.descriptors["a"]]
+    desc_b = [x.raw.decode() for x in inst3.descriptors["b"]]
+    desc_c = [x.raw.decode() for x in inst3.descriptors["c"]]
+
+    # check if we merged the descriptor correctly
+    assert desc_a == ["1"]
+    assert desc_b == ["2"]
+    assert desc_c == ["1", "2", "3"]
 
     # the merged instance schould have two samples
     assert len(samples) == 2

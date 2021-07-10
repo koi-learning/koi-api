@@ -852,15 +852,15 @@ class APIInstanceMerge(BaseResource):
 
         # add the new descriptors to the merged instance
         for key, values in new_descriptors.items():
-            new_desc = ORMInstanceDescriptor()
-            new_desc.descriptor_key = key
-            new_desc.descriptor_instance_id = instance.instance_id
-            new_desc.descriptor_uuid = uuid1()
+            for value in values:
+                new_desc = ORMInstanceDescriptor()
+                new_desc.descriptor_key = key
+                new_desc.descriptor_instance_id = instance.instance_id
+                new_desc.descriptor_uuid = uuid1().bytes
 
-            file_pers = persistence.store_file(values)
+                file_pers = persistence.store_file(value)
 
-            new_desc.descriptor_file_id = file_pers.file_id
-            db.session.add(file_pers)
-            db.session.add(new_desc)
+                new_desc.descriptor_file_id = file_pers.file_id
+                db.session.add(new_desc)
 
         db.session.commit()
