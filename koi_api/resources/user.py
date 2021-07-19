@@ -262,7 +262,7 @@ class APILogin(BaseResource):
 
         # respond
         return SUCCESS(
-            {BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BG.TOKEN: token_value, BG.EXPIRES: token_valid.isoformat(),}
+            {BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BG.TOKEN: token_value, BG.EXPIRES: token_valid.isoformat()}
         )
 
     def put(self):
