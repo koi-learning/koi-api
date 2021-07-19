@@ -51,12 +51,7 @@ class APIUser(BaseResource):
         """
         users = ORMUser.query.offset(page_offset).limit(page_limit).all()
 
-        return SUCCESS(
-            [
-                {BU.USER_UUID: UUID(bytes=u.user_uuid).hex, BU.USER_NAME: u.user_name}
-                for u in users
-            ]
-        )
+        return SUCCESS([{BU.USER_UUID: UUID(bytes=u.user_uuid).hex, BU.USER_NAME: u.user_name} for u in users])
 
     @authenticated
     @user_access([BR.ROLE_EDIT_USERS])
@@ -113,9 +108,7 @@ class APIUserCollection(BaseResource):
     @user_access([])
     def get(self, user_uuid, me, user):
 
-        return SUCCESS(
-            {BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BU.USER_NAME: user.user_name}
-        )
+        return SUCCESS({BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BU.USER_NAME: user.user_name})
 
     @authenticated
     def post(self, me, user_uuid):
@@ -131,12 +124,7 @@ class APIUserCollection(BaseResource):
 
         # update the user fields if transmitted
         if BU.USER_NAME in json_object:
-            if (
-                ORMUser.query.filter_by(
-                    user_name=json_object[BU.USER_NAME]
-                ).one_or_none()
-                is None
-            ):
+            if ORMUser.query.filter_by(user_name=json_object[BU.USER_NAME]).one_or_none() is None:
                 user.user_name = json_object[BU.USER_NAME]
             else:
                 return ERR_TAKE("user name is taken")
@@ -240,10 +228,10 @@ class APILogin(BaseResource):
 
         token_value = None
         token_created = datetime.now()
-        token_valid = token_created + timedelta(minutes=500)
+        token_valid = token_created + timedelta(minutes=15)
 
         token = 1
-        retries_left = 5
+        retries_left = 20
         while token is not None:
             if retries_left > 0:
                 retries_left -= 1
@@ -254,6 +242,13 @@ class APILogin(BaseResource):
 
             # check if token exists
             token = ORMToken.query.filter_by(token_value=token_value).one_or_none()
+
+            # check if token is expired or invalidated
+            if token is not None:
+                if token.token_invalidated or (token.token_valid + timedelta(minutes=15)) < datetime.now():
+                    token.token_value = "x" * 32
+                    db.session.commit()
+                    token = None
 
         # register token
         token = ORMToken()
@@ -267,11 +262,7 @@ class APILogin(BaseResource):
 
         # respond
         return SUCCESS(
-            {
-                BU.USER_UUID: UUID(bytes=user.user_uuid).hex,
-                BG.TOKEN: token_value,
-                BG.EXPIRES: token_valid.isoformat(),
-            }
+            {BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BG.TOKEN: token_value, BG.EXPIRES: token_valid.isoformat()}
         )
 
     def put(self):
