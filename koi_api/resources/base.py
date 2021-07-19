@@ -14,10 +14,11 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from flask_restful import Resource, request
-from datetime import datetime
+from datetime import datetime, timedelta
 import functools
 import re
 from uuid import UUID
+from ..orm import db
 from ..orm.user import ORMToken, ORMUser
 from ..orm.model import ORMModel
 from ..common.string_constants import (
@@ -37,18 +38,27 @@ class BaseResource(Resource):
     MAX_PAGE = 100
 
     def check_token(self, token_value):
+        # get the token with the matching value
         token = ORMToken.query.filter_by(token_value=token_value).one_or_none()
         if token is None:
+            # the token is unknown, so the user is not authenticated
             return False, None, False
         else:
+            # check if the token is invalidated or expired
             if token.token_invalidated or token.token_valid < datetime.now():
                 return False, None, True
-
-            return True, token.user, False
+            else:
+                # update the token if only 10 more minutes valid time remains
+                if token.token_valid - timedelta(minutes=10) < datetime.now():
+                    token.token_valid = datetime.now() + timedelta(minutes=15)
+                    db.session.commit()
+                # the token is valid, so the user is authenticated
+                return True, token.user, False
 
     def authenticate(self):
         token_value = None
         if HEADER_TOKEN in request.headers:
+            # parse the token representation from the header
             token_value = request.headers[HEADER_TOKEN]
             token_regex = re.search("[a-fA-F0-9]{32}", token_value)
 
