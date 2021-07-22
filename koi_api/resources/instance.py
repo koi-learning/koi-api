@@ -216,7 +216,7 @@ class APIInstanceDescriptorCollection(BaseResource):
         return SUCCESS(
             response,
             last_modified=instance.instance_last_modified,
-            valid_seconds=LT_INSTANCE_DESCRIPTOR,
+            valid_seconds=LT_COLLECTION,
             etag=instance.instance_etag,
         )
 
