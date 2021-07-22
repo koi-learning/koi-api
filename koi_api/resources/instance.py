@@ -115,7 +115,7 @@ class APIInstanceDescriptor(BaseResource):
         return SUCCESS(
             response,
             last_modified=datetime.utcnow(),
-            valid_seconds=LT_INSTANCE,
+            valid_seconds=LT_COLLECTION,
             etag=instance.instance_etag,
         )
 
@@ -175,7 +175,7 @@ class APIInstanceDescriptorCollection(BaseResource):
         return SUCCESS(
             response,
             last_modified=instance.instance_last_modified,
-            valid_seconds=LT_COLLECTION,
+            valid_seconds=LT_INSTANCE_DESCRIPTOR,
             etag=instance.instance_etag,
         )
 
@@ -216,7 +216,7 @@ class APIInstanceDescriptorCollection(BaseResource):
         return SUCCESS(
             response,
             last_modified=instance.instance_last_modified,
-            valid_seconds=LT_INSTANCE,
+            valid_seconds=LT_INSTANCE_DESCRIPTOR,
             etag=instance.instance_etag,
         )
 
@@ -245,7 +245,7 @@ class APIInstanceDescriptorFile(BaseResource):
         return SUCCESS(
             "",
             last_modified=instance.instance_last_modified,
-            valid_seconds=LT_INSTANCE,
+            valid_seconds=LT_INSTANCE_DESCRIPTOR,
             etag=instance.instance_etag,
         )
 
@@ -275,7 +275,7 @@ class APIInstanceDescriptorFile(BaseResource):
                     data_raw,
                     mimetype="application/octet-stream",
                     last_modified=instance.instance_last_modified,
-                    cache_timeout=LT_INSTANCE,
+                    cache_timeout=LT_INSTANCE_DESCRIPTOR,
                     add_etags=False,
                 )
             )
@@ -311,7 +311,7 @@ class APIInstanceDescriptorFile(BaseResource):
         return SUCCESS(
             "",
             last_modified=instance.instance_last_modified,
-            valid_seconds=LT_INSTANCE,
+            valid_seconds=LT_INSTANCE_DESCRIPTOR,
             etag=instance.instance_etag,
         )
 

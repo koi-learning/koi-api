@@ -23,7 +23,7 @@ LT_MODEL_FINALIZED = 25
 # lifetime of instance objects
 LT_INSTANCE = 10
 LT_INSTANCE_FINALIZED = 25
-LT_INSTANCE_DESCRIPTOR = 25
+LT_INSTANCE_DESCRIPTOR = 1
 
 # lifetime of sample objects
 LT_SAMPLE = 10
