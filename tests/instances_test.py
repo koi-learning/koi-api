@@ -17,7 +17,11 @@ from . import Dummy
 
 
 def test_instance_merging(testserver):
-    koi.init()
+    try:
+        koi.init()
+    except koi.exceptions.KoiInitializationError:
+        ...
+
     pool = koi.create_api_object_pool(*testserver)
 
     # create an empty model

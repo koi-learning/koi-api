@@ -26,6 +26,7 @@ def create_app():
     CORS(app)
 
     from . import orm, resources, persistence
+    from datetime import datetime
 
     persistence.init_app(app)
 
@@ -40,84 +41,70 @@ def create_app():
         orm.db.create_all()
         from uuid import uuid1
 
-        num_admin_roles = orm.access.ORMAccessGeneral.query.count()
-        if num_admin_roles == 0:
-            admin_role = orm.role.ORMUserRoleGeneral()
-            admin_role.role_name = "admin"
-            admin_role.role_description = "default super-user"
-            admin_role.role_uuid = uuid1().bytes
-            admin_role.is_essential = True
-            admin_role.enumerate_users = True
-            admin_role.enumerate_models = True
-            admin_role.enumerate_access = True
-            admin_role.enumerate_roles = True
-            admin_role.grant_access = True
-            admin_role.edit_users = True
-            admin_role.edit_models = True
-            admin_role.edit_roles = True
+        # pair the config keys with their appropriate ORM-constructors
+        roles = [
+            ("INITIAL_INSTANCE_ROLES", orm.role.ORMUserRoleInstance),
+            ("INITIAL_MODEL_ROLES", orm.role.ORMUserRoleModel),
+            ("INITIAL_GENERAL_ROLES", orm.role.ORMUserRoleGeneral),
+            ("ADDITIONAL_GENERAL_ROLES", orm.role.ORMUserRoleGeneral),
+        ]
 
-            orm.db.session.add(admin_role)
-
-        num_instance_owner_role = orm.role.ORMUserRoleInstance.query.count()
-        if num_instance_owner_role == 0:
-            instance_owner_role = orm.role.ORMUserRoleInstance()
-            instance_owner_role.role_uuid = uuid1().bytes
-            instance_owner_role.role_name = "owner"
-            instance_owner_role.role_description = "instance owner"
-            instance_owner_role.can_see = True
-            instance_owner_role.add_sample = True
-            instance_owner_role.get_training_data = True
-            instance_owner_role.get_inference_data = True
-            instance_owner_role.edit = True
-            instance_owner_role.grant_access = True
-            instance_owner_role.enumerate_access = True
-            instance_owner_role.is_essential = True
-            instance_owner_role.request_label = True
-            instance_owner_role.response_label = True
-
-            orm.db.session.add(instance_owner_role)
-
-        num_model_owner_role = orm.role.ORMUserRoleModel.query.count()
-        if num_model_owner_role == 0:
-            model_owner_role = orm.role.ORMUserRoleModel()
-            model_owner_role.role_uuid = uuid1().bytes
-            model_owner_role.role_name = "owner"
-            model_owner_role.role_description = "model owner"
-            model_owner_role.is_essential = True
-
-            model_owner_role.can_see = True
-            model_owner_role.instantiate = True
-            model_owner_role.edit = True
-            model_owner_role.download_code = True
-            model_owner_role.grant_access = True
-            model_owner_role.enumerate_access = True
-            model_owner_role.enumerate_instances = True
-
-            orm.db.session.add(model_owner_role)
-
+        # add all initial roles if not present
+        for role_type, role_object in roles:
+            if role_type in app.config:
+                for role in app.config[role_type]:
+                    db_role = role_object.query.filter_by(role_name=role["name"]).one_or_none()
+                    if db_role is None:
+                        # create a new role
+                        db_role = role_object()
+                        db_role.role_uuid = uuid1().bytes
+                        db_role.role_name = role["name"]
+                        db_role.role_description = role["description"]
+                        db_role.is_essential = role["is_essential"]
+                        for priv, value in role["priviledges"].items():
+                            setattr(db_role, priv, value)
+                        orm.db.session.add(db_role)
+                    else:
+                        # update if we already know this role
+                        # do not update the uuid and the name
+                        db_role.role_description = role["description"]
+                        db_role.is_essential = role["is_essential"]
+                        for priv, value in role["priviledges"].items():
+                            setattr(db_role, priv, value)
         orm.db.session.commit()
 
-        admin = orm.user.ORMUser.query.first()
-        if admin is None:
-            from datetime import datetime
+        for user_type in ["INITIAL_USERS", "ADDITIONAL_USERS"]:
+            if user_type in app.config:
+                for user in app.config[user_type]:
+                    db_user = orm.user.ORMUser.query.filter_by(user_name=user["name"]).one_or_none()
+                    if db_user is None:
+                        # create a new user but do not edit existing users
+                        db_user = orm.user.ORMUser()
+                        db_user.user_name = user["name"]
+                        db_user.user_uuid = uuid1().bytes
+                        db_user.user_hash = resources.user.hash_password(user["password"])
+                        db_user.user_created = datetime.now()
+                        db_user.is_essential = user["is_essential"]
+                        orm.db.session.add(db_user)
+                        orm.db.session.commit()
 
-            admin = orm.user.ORMUser()
-            admin.user_name = "admin"
-            admin.user_hash = resources.user.hash_password("admin")
-            admin.user_created = datetime.now()
-            admin.user_uuid = uuid1().bytes
-            admin.is_essential = True
-            orm.db.session.add(admin)
-            orm.db.session.commit()
+                    # for each role assigned to this user, add it if not present
+                    for role_name in user["general_roles"]:
+                        db_role = orm.role.ORMUserRoleGeneral.query.filter_by(role_name=role_name).one_or_none()
+                        if db_role is None:
+                            # something is very wrong -> we do not know this role
+                            continue
 
-            admin_role = orm.role.ORMUserRoleGeneral.query.first()
-
-            new_access = orm.access.ORMAccessGeneral()
-            new_access.role_id = admin_role.role_id
-            new_access.user_id = admin.user_id
-            new_access.access_uuid = uuid1().bytes
-
-            orm.db.session.add(new_access)
-            orm.db.session.commit()
+                        user_role_assoc = orm.access.ORMAccessGeneral.query.filter_by(
+                            user_id=db_user.user_id, role_id=db_role.role_id
+                        ).one_or_none()
+                        if user_role_assoc is None:
+                            # create a new association
+                            user_role_assoc = orm.access.ORMAccessGeneral()
+                            user_role_assoc.user_id = db_user.user_id
+                            user_role_assoc.role_id = db_role.role_id
+                            user_role_assoc.access_uuid = uuid1().bytes
+                            orm.db.session.add(user_role_assoc)
+        orm.db.session.commit()
 
     return app
