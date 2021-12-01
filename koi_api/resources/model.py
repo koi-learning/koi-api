@@ -357,7 +357,7 @@ class APIModelCode(BaseResource):
 
 class APIModelVisualPlugin(BaseResource):
     @authenticated
-    @model_access([BR.ROLE_EDIT_MODEL])
+    @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me):
         if model.visual_plugin is None or model.visual_plugin.file is None:
             return ERR_NOFO("no visual plugin specified")
@@ -402,7 +402,7 @@ class APIModelVisualPlugin(BaseResource):
 
 class APIModelRequestPlugin(BaseResource):
     @authenticated
-    @model_access([BR.ROLE_EDIT_MODEL])
+    @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me):
         if model.request_plugin is None or model.request_plugin.file is None:
             return ERR_NOFO("no request plugin specified")
