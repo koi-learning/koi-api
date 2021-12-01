@@ -17,7 +17,11 @@ from . import Dummy
 
 
 def test_sample_filtering(testserver):
-    koi.init()
+    try:
+        koi.init()
+    except koi.exceptions.KoiInitializationError:
+        ...
+
     pool = koi.create_api_object_pool(*testserver)
 
     model = pool.new_model()
