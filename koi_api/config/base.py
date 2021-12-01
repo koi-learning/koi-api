@@ -24,7 +24,7 @@ FORCE_RESET = False
 INITIAL_GENERAL_ROLES = [
     {
         "name": "admin",
-        "description": "Administrator",
+        "description": "KOI-Administrator",
         "is_essential": True,
         "priviledges": {
             "grant_access": True,
@@ -36,6 +36,17 @@ INITIAL_GENERAL_ROLES = [
     {
         "name": "guest",
         "description": "Guest",
+        "is_essential": False,
+        "priviledges": {
+            "grant_access": False,
+            "edit_users": False,
+            "edit_models": False,
+            "edit_roles": False,
+        },
+    },
+    {
+        "name": "worker",
+        "description": "Worker",
         "is_essential": False,
         "priviledges": {
             "grant_access": False,
@@ -67,6 +78,30 @@ INITIAL_MODEL_ROLES = [
         "priviledges": {
             "can_see": True,
             "instantiate": False,
+            "edit": False,
+            "download_code": False,
+            "grant_access": False,
+        },
+    },
+    {
+        "name": "worker",
+        "description": "Model access for workers",
+        "is_essential": False,
+        "priviledges": {
+            "can_see": True,
+            "instantiate": True,
+            "edit": False,
+            "download_code": True,
+            "grant_access": False,
+        },
+    },
+    {
+        "name": "user",
+        "description": "Model access for users",
+        "is_essential": False,
+        "priviledges": {
+            "can_see": True,
+            "instantiate": True,
             "edit": False,
             "download_code": False,
             "grant_access": False,
@@ -105,10 +140,42 @@ INITIAL_INSTANCE_ROLES = [
             "response_label": False,
         },
     },
+    {
+        "name": "worker",
+        "description": "Instance access for workers",
+        "is_essential": False,
+        "priviledges": {
+            "can_see": True,
+            "add_sample": True,
+            "get_training_data": True,
+            "get_inference_data": True,
+            "edit": True,
+            "grant_access": False,
+            "request_label": True,
+            "response_label": False,
+        },
+    },
+    {
+        "name": "user",
+        "description": "Instance access for users",
+        "is_essential": False,
+        "priviledges": {
+            "can_see": True,
+            "add_sample": False,
+            "get_training_data": False,
+            "get_inference_data": True,
+            "edit": True,
+            "grant_access": False,
+            "request_label": False,
+            "response_label": True,
+        },
+    },
+
 ]
 
 INITIAL_USERS = [
     {"name": "admin", "password": "admin", "is_essential": True, "general_roles": ["admin"]},
     {"name": "guest", "password": "guest", "is_essential": False, "general_roles": ["guest"]},
+    {"name": "worker", "password": "worker", "is_essential": False, "general_roles": ["worker"]},
 ]
 ADDITIONAL_USERS = []
