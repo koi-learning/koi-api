@@ -94,7 +94,7 @@ def create_app():
                         if db_role is None:
                             # something is very wrong -> we do not know this role
                             continue
-                        
+
                         user_role_assoc = orm.access.ORMAccessGeneral.query.filter_by(
                             user_id=db_user.user_id, role_id=db_role.role_id
                         ).one_or_none()
