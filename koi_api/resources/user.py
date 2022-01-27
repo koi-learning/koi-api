@@ -108,7 +108,14 @@ class APIUserCollection(BaseResource):
     @user_access([])
     def get(self, user_uuid, me, user):
 
-        return SUCCESS({BU.USER_UUID: UUID(bytes=user.user_uuid).hex, BU.USER_NAME: user.user_name})
+        return SUCCESS(
+            {
+                BU.USER_UUID: UUID(bytes=user.user_uuid).hex,
+                BU.USER_NAME: user.user_name,
+                BU.USER_ESSENTIAL: user.is_essential,
+                BU.USER_CREATED: user.user_created.isoformat(),
+            }
+        )
 
     @authenticated
     def post(self, me, user_uuid):

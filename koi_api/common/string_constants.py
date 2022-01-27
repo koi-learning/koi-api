@@ -48,6 +48,8 @@ class BODY_TAG:
 class BODY_USER:
     USER_NAME = "user_name"
     USER_UUID = "user_uuid"
+    USER_ESSENTIAL = "user_essential"
+    USER_CREATED = "user_created"
     PASSWORD = "password"
 
 
