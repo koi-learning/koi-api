@@ -27,7 +27,7 @@ class ORMInstance(db.Model):
     instance_id = db.Column(db.Integer, primary_key=True, unique=True)
     instance_name = db.Column(db.String(500))
     instance_description = db.Column(db.String(500))
-    instance_uuid = db.Column(db.Binary(16))
+    instance_uuid = db.Column(db.LargeBinary(16))
     instance_finalized = db.Column(db.Boolean)
     instance_last_modified = db.Column(db.DateTime, nullable=False)
     instance_samples_last_modified = db.Column(db.DateTime, nullable=False)
@@ -98,7 +98,7 @@ class ORMInstanceInferenceData(db.Model):
         db.Index("idx_inferencedata_data_uuid", "data_uuid", mysql_length=16),
     )
     data_id = db.Column(db.Integer, primary_key=True, unique=True)
-    data_uuid = db.Column(db.Binary(16))
+    data_uuid = db.Column(db.LargeBinary(16))
 
     data_last_modified = db.Column(db.DateTime)
     data_etag = db.Column(db.String(50))
@@ -116,7 +116,7 @@ class ORMInstanceTrainingData(db.Model):
         db.Index("idx_trainingdata_data_uuid", "data_uuid", mysql_length=16),
     )
     data_id = db.Column(db.Integer, primary_key=True, unique=True)
-    data_uuid = db.Column(db.Binary(16))
+    data_uuid = db.Column(db.LargeBinary(16))
 
     data_last_modified = db.Column(db.DateTime)
     data_etag = db.Column(db.String(50))
@@ -136,7 +136,7 @@ class ORMInstanceDescriptor(db.Model):
         ),
     )
     descriptor_id = db.Column(db.Integer, primary_key=True, unique=True)
-    descriptor_uuid = db.Column(db.Binary(16))
+    descriptor_uuid = db.Column(db.LargeBinary(16))
 
     descriptor_key = db.Column(db.String(500))
 

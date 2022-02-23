@@ -21,7 +21,7 @@ class ORMModelParameter(db.Model):
     __table_args__ = (db.Index("idx_modelparam_param_uuid", "param_uuid", mysql_length=16),)
 
     param_id = db.Column(db.Integer, primary_key=True, unique=True)
-    param_uuid = db.Column(db.Binary(16))
+    param_uuid = db.Column(db.LargeBinary(16))
 
     param_name = db.Column(db.String(500))
     param_description = db.Column(db.String(500))
@@ -36,7 +36,7 @@ class ORMInstanceParameter(db.Model):
     __tablename__ = "instanceparam"
     __table_args__ = (db.Index("idx_instanceparam_param_uuid", "param_uuid", mysql_length=16),)
     param_id = db.Column(db.Integer, primary_key=True, unique=True)
-    param_uuid = db.Column(db.Binary(16))
+    param_uuid = db.Column(db.LargeBinary(16))
 
     param_value = db.Column(db.String(500))
 

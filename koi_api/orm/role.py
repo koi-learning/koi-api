@@ -23,7 +23,7 @@ class ORMUserRoleGeneral(db.Model):
     role_id = db.Column(db.Integer, primary_key=True, unique=True)
     role_name = db.Column(db.String(500))
     role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.Binary(16))
+    role_uuid = db.Column(db.LargeBinary(16))
 
     grant_access = db.Column(db.Boolean)
 
@@ -55,7 +55,7 @@ class ORMUserRoleInstance(db.Model):
     role_id = db.Column(db.Integer, primary_key=True, unique=True)
     role_name = db.Column(db.String(500))
     role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.Binary(16))
+    role_uuid = db.Column(db.LargeBinary(16))
 
     can_see = db.Column(db.Boolean)
     add_sample = db.Column(db.Boolean)
@@ -96,7 +96,7 @@ class ORMUserRoleModel(db.Model):
     role_id = db.Column(db.Integer, primary_key=True, unique=True)
     role_name = db.Column(db.String(500))
     role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.Binary(16))
+    role_uuid = db.Column(db.LargeBinary(16))
 
     can_see = db.Column(db.Boolean)
     instantiate = db.Column(db.Boolean)

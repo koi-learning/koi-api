@@ -33,7 +33,7 @@ class ORMSample(db.Model):
         db.Index("idx_sample_sample_uuid", "sample_uuid", mysql_length=16),
     )
     sample_id = db.Column(db.Integer, primary_key=True, unique=True)
-    sample_uuid = db.Column(db.Binary(16))
+    sample_uuid = db.Column(db.LargeBinary(16))
     sample_finalized = db.Column(db.Boolean)
 
     sample_last_modified = db.Column(db.DateTime, nullable=False)
@@ -86,7 +86,7 @@ class ORMSampleData(db.Model):
         db.Index("idx_sampledata_data_uuid", "data_uuid", mysql_length=16),
     )
     data_id = db.Column(db.Integer, primary_key=True, unique=True)
-    data_uuid = db.Column(db.Binary(16))
+    data_uuid = db.Column(db.LargeBinary(16))
 
     data_last_modified = db.Column(db.DateTime, nullable=False)
     data_etag = db.Column(db.String(50))
@@ -104,7 +104,7 @@ class ORMSampleLabel(db.Model):
     __tablename__ = "label"
     __table_args__ = (db.Index("idx_label_label_uuid", "label_uuid", mysql_length=16),)
     label_id = db.Column(db.Integer, primary_key=True, unique=True)
-    label_uuid = db.Column(db.Binary(16))
+    label_uuid = db.Column(db.LargeBinary(16))
 
     label_last_modified = db.Column(db.DateTime, nullable=False)
     label_etag = db.Column(db.String(50))

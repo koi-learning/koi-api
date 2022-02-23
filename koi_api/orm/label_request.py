@@ -20,7 +20,7 @@ class ORMLabelRequest(db.Model):
     __tablename__ = "labelrequest"
     __table_args__ = (db.Index("idx_labelrequest_label_request_uuid", "label_request_uuid", mysql_length=16),)
     label_request_id = db.Column(db.Integer, primary_key=True, unique=True)
-    label_request_uuid = db.Column(db.Binary(16))
+    label_request_uuid = db.Column(db.LargeBinary(16))
 
     obsolete = db.Column(db.Boolean)
 

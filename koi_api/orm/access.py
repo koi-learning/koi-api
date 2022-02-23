@@ -20,7 +20,7 @@ class ORMAccessGeneral(db.Model):
     __tablename__ = "accessgeneral"
     __table_args__ = (db.Index("idx_accessgeneral_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.Binary(16))
+    access_uuid = db.Column(db.LargeBinary(16))
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"))
     user = db.relationship("ORMUser", back_populates="access_rights")
@@ -33,7 +33,7 @@ class ORMAccessInstance(db.Model):
     __tablename__ = "accessinstance"
     __table_args__ = (db.Index("idx_accessinstance_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.Binary(16))
+    access_uuid = db.Column(db.LargeBinary(16))
     instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
     instance = db.relationship("ORMInstance", back_populates="granted_users")
 
@@ -48,7 +48,7 @@ class ORMAccessModel(db.Model):
     __tablename__ = "accessmodel"
     __table_args__ = (db.Index("idx_accessmodel_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.Binary(16))
+    access_uuid = db.Column(db.LargeBinary(16))
     model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
     model = db.relationship("ORMModel", back_populates="granted_users")
 

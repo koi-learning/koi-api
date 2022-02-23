@@ -27,7 +27,7 @@ class ORMModel(db.Model):
     model_id = db.Column(db.Integer, primary_key=True, unique=True)
     model_name = db.Column(db.String(500))
     model_description = db.Column(db.String(500))
-    model_uuid = db.Column(db.Binary(16))
+    model_uuid = db.Column(db.LargeBinary(16))
     model_finalized = db.Column(db.Boolean)
     model_last_modified = db.Column(db.DateTime, nullable=False)
     model_instances_last_modified = db.Column(db.DateTime, nullable=False)

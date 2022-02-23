@@ -22,9 +22,9 @@ class ORMUser(db.Model):
 
     user_id = db.Column(db.Integer, primary_key=True, unique=True)
     user_name = db.Column(db.String(500), unique=True)
-    user_hash = db.Column(db.Binary(32))
+    user_hash = db.Column(db.LargeBinary(32))
     user_created = db.Column(db.DateTime)
-    user_uuid = db.Column(db.Binary(16))
+    user_uuid = db.Column(db.LargeBinary(16))
     is_essential = db.Column(db.Boolean)
 
     tokens = db.relationship(
