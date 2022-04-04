@@ -1,5 +1,7 @@
 FROM python:3.8
 COPY ./ ./src
+ENV KOI_CONFIG="./config/docker.py"
+
 RUN pip install ./src
 RUN pip install waitress
 
