@@ -20,7 +20,7 @@ import os
 @pytest.fixture
 def testserver(xprocess):
     class Starter(ProcessStarter):
-        pattern = "Running on http://127.0.0.1:5000/"
+        pattern = "Running on http://127.0.0.1:5000"
 
         cwd = os.getcwd()
 
@@ -34,7 +34,7 @@ def testserver(xprocess):
 
         env = my_env
 
-        timeout = 15
+        timeout = 30
 
     # ensure process is running and return its logfile
     logs = xprocess.ensure("testserver", Starter)
