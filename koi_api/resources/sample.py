@@ -253,6 +253,7 @@ class APISampleCollection(BaseResource):
         if modified:
             instance.instance_samples_last_modified = datetime.utcnow()
             instance.instance_samples_etag = token_hex(16)
+            instance.instance_etag = token_hex(16)  # propagate the change to the instance forcing an cache invalidation
             sample.sample_last_modified = datetime.utcnow()
             sample.sample_etag = token_hex(16)
 
