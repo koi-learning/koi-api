@@ -65,6 +65,7 @@ class BODY_INSTANCE:
     INSTANCE_DESCRIPTOR_KEY = "key"
     INSTANCE_DESCRIPTOR_KEY_HAS_FILE = "has_file"
     INSTANCE_COULD_TRAIN = "could_train"
+    INSTANCE_LAST_MODIFIED = "last_modified"
 
 
 class BODY_MODEL:
@@ -76,6 +77,7 @@ class BODY_MODEL:
     MODEL_HAS_CODE = "has_code"
     MODEL_HAS_PLUGIN_VISUAL = "has_visual_plugin"
     MODEL_HAS_PLUGIN_LABEL = "has_label_plugin"
+    MODEL_LAST_MODIFIED = "last_modified"
 
 
 class BODY_ROLE:

@@ -388,6 +388,7 @@ class APIInstance(BaseResource):
                     instance.instance_last_modified
                     < instance.instance_samples_last_modified
                 ),
+                BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
             }
             for instance in instances
         ]
@@ -523,6 +524,7 @@ class APIInstanceCollection(BaseResource):
                 instance.instance_last_modified
                 < instance.instance_samples_last_modified
             ),
+            BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
         }
 
         valid = LT_INSTANCE
