@@ -14,8 +14,8 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from uuid import uuid1, UUID
-from ..orm import db
-from .base import (
+from koi_api.orm import db
+from koi_api.resources.base import (
     BaseResource,
     paged,
     user_access,
@@ -24,11 +24,11 @@ from .base import (
     model_access,
     instance_access,
 )
-from ..orm.user import ORMUser
-from ..orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
-from ..orm.access import ORMAccessGeneral, ORMAccessModel, ORMAccessInstance
-from ..common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
-from ..common.string_constants import (
+from koi_api.orm.user import ORMUser
+from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
+from koi_api.orm.access import ORMAccessGeneral, ORMAccessModel, ORMAccessInstance
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
+from koi_api.common.string_constants import (
     BODY_USER as BU,
     BODY_ACCESS as BA,
     BODY_ROLE as BR,

@@ -18,20 +18,20 @@ from datetime import datetime, timedelta
 import functools
 import re
 from uuid import UUID
-from ..orm import db
-from ..orm.user import ORMToken, ORMUser
-from ..orm.model import ORMModel
-from ..common.string_constants import (
+from koi_api.orm import db
+from koi_api.orm.user import ORMToken, ORMUser
+from koi_api.orm.model import ORMModel
+from koi_api.common.string_constants import (
     HEADER_TOKEN,
     BODY_GENERAL as BG,
     BODY_SAMPLE as BS,
 )
-from ..common.string_constants import (
+from koi_api.common.string_constants import (
     BODY_USER as BU,
     BODY_MODEL as BM,
     BODY_INSTANCE as BI,
 )
-from ..common.return_codes import ERR_AUTH, SUCCESS, ERR_BADR, ERR_FORB, ERR_NOFO
+from koi_api.common.return_codes import ERR_AUTH, SUCCESS, ERR_BADR, ERR_FORB, ERR_NOFO
 
 
 class BaseResource(Resource):

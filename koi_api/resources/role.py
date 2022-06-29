@@ -14,12 +14,12 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from uuid import uuid1, UUID
-from ..orm import db
-from .base import BaseResource, paged, authenticated, user_access, json_request
-from ..orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
-from ..common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
-from ..common.string_constants import BODY_ROLE as BR
-from ..common.name_generator import gen_name
+from koi_api.orm import db
+from koi_api.resources.base import BaseResource, paged, authenticated, user_access, json_request
+from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
+from koi_api.common.string_constants import BODY_ROLE as BR
+from koi_api.common.name_generator import gen_name
 
 
 class APIUserRoleGeneral(BaseResource):

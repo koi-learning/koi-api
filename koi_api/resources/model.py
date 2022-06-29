@@ -21,16 +21,16 @@ from uuid import uuid1, UUID
 from zipfile import ZipFile, BadZipFile
 from re import compile
 from datetime import datetime
-from ..orm import db
-from ..persistence import persistence
-from ..orm.parameters import ORMModelParameter
-from ..orm.model import (
+from koi_api.orm import db
+from koi_api.persistence import persistence
+from koi_api.orm.parameters import ORMModelParameter
+from koi_api.orm.model import (
     ORMModel,
     ORMModelCode,
     ORMModelVisualPlugin,
     ORMModelLabelRequestPlugin,
 )
-from .base import (
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     paged,
@@ -38,13 +38,13 @@ from .base import (
     model_access,
     json_request,
 )
-from ..orm.access import ORMAccessModel
-from ..orm.role import ORMUserRoleModel
-from ..common.return_codes import ERR_FORB, SUCCESS, ERR_NOFO, ERR_BADR
-from ..common.string_constants import BODY_MODEL as BM
-from ..common.string_constants import BODY_ROLE as BR
-from ..common.name_generator import gen_name
-from .lifetime import LT_MODEL, LT_MODEL_FINALIZED, LT_COLLECTION
+from koi_api.orm.access import ORMAccessModel
+from koi_api.orm.role import ORMUserRoleModel
+from koi_api.common.return_codes import ERR_FORB, SUCCESS, ERR_NOFO, ERR_BADR
+from koi_api.common.string_constants import BODY_MODEL as BM
+from koi_api.common.string_constants import BODY_ROLE as BR
+from koi_api.common.name_generator import gen_name
+from koi_api.resources.lifetime import LT_MODEL, LT_MODEL_FINALIZED, LT_COLLECTION
 
 
 class APIModel(BaseResource):

@@ -18,7 +18,7 @@ import secrets
 from uuid import uuid1, UUID
 from hashlib import sha256
 from datetime import datetime, timedelta
-from ..common.return_codes import (
+from koi_api.common.return_codes import (
     ERR_BADR,
     ERR_TAKE,
     SUCCESS,
@@ -26,15 +26,15 @@ from ..common.return_codes import (
     ERR_NOFO,
     ERR_AUTH,
 )
-from ..orm.user import ORMUser, ORMToken
-from ..orm import db
-from .base import BaseResource, authenticated, paged, user_access, json_request
-from ..common.string_constants import (
+from koi_api.orm.user import ORMUser, ORMToken
+from koi_api.orm import db
+from koi_api.resources.base import BaseResource, authenticated, paged, user_access, json_request
+from koi_api.common.string_constants import (
     BODY_USER as BU,
     BODY_GENERAL as BG,
     BODY_ROLE as BR,
 )
-from ..common.name_generator import gen_name
+from koi_api.common.name_generator import gen_name
 
 
 def hash_password(password):

@@ -13,15 +13,15 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from .base import (
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     model_access,
     instance_access,
 )
-from ..common.return_codes import ERR_FORB, SUCCESS
-from ..common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
-from .lifetime import LT_COLLECTION
+from koi_api.common.return_codes import ERR_FORB, SUCCESS
+from koi_api.common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
+from koi_api.resources.lifetime import LT_COLLECTION
 
 
 class APIInstanceTag(BaseResource):

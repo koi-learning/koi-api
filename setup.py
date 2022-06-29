@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="koi-api",
-    version="0.3.3",
+    version="0.4.0",
     packages=setuptools.find_packages(),
     install_requires=[
         "sqlalchemy",

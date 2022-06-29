@@ -15,15 +15,15 @@
 
 from flask_restful import Api
 
-from .user import APIUserCollection, APIUser, APILogin, APILogout
-from .model import (
+from koi_api.resources.user import APIUserCollection, APIUser, APILogin, APILogout
+from koi_api.resources.model import (
     APIModel,
     APIModelCollection,
     APIModelCode,
     APIModelVisualPlugin,
     APIModelRequestPlugin,
 )
-from .instance import (
+from koi_api.resources.instance import (
     APIInstance,
     APIInstanceCollection,
     APIInstanceInferenceData,
@@ -33,7 +33,7 @@ from .instance import (
     APIInstanceDescriptorFile,
     APIInstanceMerge,
 )
-from .sample import (
+from koi_api.resources.sample import (
     APISample,
     APISampleCollection,
     APISampleData,
@@ -43,9 +43,9 @@ from .sample import (
     APISampleLabel,
     APISampleLabelCollection,
 )
-from .sample_tags import APISampleTag, APISampleTagCollection
-from .instance_tags import APIInstanceTag
-from .access import (
+from koi_api.resources.sample_tags import APISampleTag, APISampleTagCollection
+from koi_api.resources.instance_tags import APIInstanceTag
+from koi_api.resources.access import (
     APIGeneralAccess,
     APIGeneralAccessCollection,
     APIInstanceAccess,
@@ -53,7 +53,7 @@ from .access import (
     APIModelAccess,
     APIModelAccessCollection,
 )
-from .role import (
+from koi_api.resources.role import (
     APIUserRoleGeneral,
     APIUserRoleGeneralCollection,
     APIUserRoleModel,
@@ -61,13 +61,14 @@ from .role import (
     APIUserRoleInstance,
     APIUserRoleInstanceCollection,
 )
-from .parameters import (
+from koi_api.resources.parameters import (
     APIInstanceParameter,
     APIInstanceParameterCollection,
     APIModelParameter,
     APIModelParameterCollection,
 )
-from .label_request import APILabelRequest, APILabelRequestCollection
+from koi_api.resources.label_request import APILabelRequest, APILabelRequestCollection
+from koi_api.resources.health import APIHealth
 
 
 api = Api()
@@ -224,4 +225,5 @@ def init_app(app):
         APIUserRoleInstanceCollection, "/api/userroles/instance/<string:role_uuid>"
     )
 
+    api.add_resource(APIHealth, "/health")
     api.init_app(app)

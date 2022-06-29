@@ -15,18 +15,18 @@
 
 from datetime import datetime
 from secrets import token_hex
-from ..orm import db
-from .base import (
+from koi_api.orm import db
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     model_access,
     instance_access,
 )
-from .base import sample_access, json_request
-from ..orm.sample import ORMAssociationTags, ORMSampleTag
-from ..common.return_codes import ERR_FORB, SUCCESS
-from ..common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
-from .lifetime import LT_COLLECTION
+from koi_api.resources.base import sample_access, json_request
+from koi_api.orm.sample import ORMAssociationTags, ORMSampleTag
+from koi_api.common.return_codes import ERR_FORB, SUCCESS
+from koi_api.common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
+from koi_api.resources.lifetime import LT_COLLECTION
 
 
 class APISampleTag(BaseResource):

@@ -13,7 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from ..orm import db
+from koi_api.orm import db
 
 
 class ORMAssociationTags(db.Model):

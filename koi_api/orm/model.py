@@ -15,7 +15,7 @@
 
 from koi_api.orm.parameters import ORMModelParameter
 from typing import Iterable
-from ..orm import db
+from koi_api.orm import db
 
 
 class ORMModel(db.Model):
