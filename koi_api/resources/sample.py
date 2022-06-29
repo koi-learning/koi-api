@@ -18,21 +18,21 @@ from flask_restful import request
 from flask import send_file
 from io import BytesIO
 from datetime import datetime
-from ..orm import db
-from .base import (
+from koi_api.orm import db
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     model_access,
     instance_access,
     sample_label_access,
 )
-from .base import paged, sample_access, sample_data_access, json_request, sample_filter
+from koi_api.resources.base import paged, sample_access, sample_data_access, json_request, sample_filter
 from uuid import UUID, uuid1
-from ..orm.sample import ORMSample, ORMSampleData, ORMSampleLabel, ORMSampleTag
-from ..persistence import persistence
-from ..common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
-from ..common.string_constants import BODY_SAMPLE as BS, BODY_ROLE as BR
-from .lifetime import LT_COLLECTION, LT_SAMPLE, LT_SAMPLE_FINALIZED
+from koi_api.orm.sample import ORMSample, ORMSampleData, ORMSampleLabel, ORMSampleTag
+from koi_api.persistence import persistence
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
+from koi_api.common.string_constants import BODY_SAMPLE as BS, BODY_ROLE as BR
+from koi_api.resources.lifetime import LT_COLLECTION, LT_SAMPLE, LT_SAMPLE_FINALIZED
 
 
 class APISample(BaseResource):

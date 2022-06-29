@@ -16,17 +16,17 @@
 from koi_api.orm.model import ORMModel
 from koi_api.orm.instance import ORMInstance
 from uuid import UUID, uuid1
-from ..orm import db
-from ..resources.base import (
+from koi_api.orm import db
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     model_access,
     instance_access,
     json_request,
 )
-from ..common.string_constants import BODY_ROLE as BR, BODY_PARAM as BP
-from ..common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR
-from ..orm.parameters import ORMInstanceParameter
+from koi_api.common.string_constants import BODY_ROLE as BR, BODY_PARAM as BP
+from koi_api.common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR
+from koi_api.orm.parameters import ORMInstanceParameter
 
 
 class APIModelParameter(BaseResource):

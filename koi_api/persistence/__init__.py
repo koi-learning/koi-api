@@ -13,9 +13,9 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from .core import PersistenceHandler
+from koi_api.persistence.core import PersistenceHandler
 from sqlalchemy import event
-from ..orm.file import ORMFile
+from koi_api.orm.file import ORMFile
 
 
 class PersistenceSingleton:

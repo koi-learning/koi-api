@@ -13,8 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from ..common.string_constants import BODY_ROLE as BR
-from ..orm import db
+from koi_api.common.string_constants import BODY_ROLE as BR
+from koi_api.orm import db
 
 
 class ORMUserRoleGeneral(db.Model):

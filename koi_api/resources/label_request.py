@@ -15,14 +15,14 @@
 
 from flask_restful import request
 from uuid import uuid1, UUID
-from .base import BaseResource, authenticated, paged
-from .base import instance_access, json_request, model_access, label_request_filter
-from ..orm import db
-from ..persistence import persistence
-from ..orm.sample import ORMSample, ORMSampleLabel
-from ..orm.label_request import ORMLabelRequest
-from ..common.return_codes import ERR_FORB, ERR_NOFO, SUCCESS, ERR_BADR
-from ..common.string_constants import BODY_SAMPLE as BS, BODY_ROLE as BR, BODY_INSTANCE as BI
+from koi_api.resources.base import BaseResource, authenticated, paged
+from koi_api.resources.base import instance_access, json_request, model_access, label_request_filter
+from koi_api.orm import db
+from koi_api.persistence import persistence
+from koi_api.orm.sample import ORMSample, ORMSampleLabel
+from koi_api.orm.label_request import ORMLabelRequest
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, SUCCESS, ERR_BADR
+from koi_api.common.string_constants import BODY_SAMPLE as BS, BODY_ROLE as BR, BODY_INSTANCE as BI
 
 
 class APILabelRequest(BaseResource):

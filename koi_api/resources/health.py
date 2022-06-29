@@ -13,8 +13,8 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from .base import BaseResource
-from ..common.return_codes import ERR_FORB, SUCCESS
+from koi_api.resources.base import BaseResource
+from koi_api.common.return_codes import ERR_FORB, SUCCESS
 
 
 class APIHealth(BaseResource):

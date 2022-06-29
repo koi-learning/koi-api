@@ -23,7 +23,7 @@ from io import BytesIO
 from uuid import uuid1, UUID
 from secrets import token_hex
 from datetime import datetime
-from .base import (
+from koi_api.resources.base import (
     BaseResource,
     authenticated,
     paged,
@@ -32,20 +32,20 @@ from .base import (
     descriptor_access,
     json_request,
 )
-from ..orm import db
-from ..persistence import persistence
-from ..orm.instance import (
+from koi_api.orm import db
+from koi_api.persistence import persistence
+from koi_api.orm.instance import (
     ORMInstance,
     ORMInstanceInferenceData,
     ORMInstanceTrainingData,
     ORMInstanceDescriptor,
 )
-from ..orm.access import ORMAccessInstance
-from ..orm.role import ORMUserRoleInstance
-from ..common.return_codes import ERR_FORB, ERR_NOFO, SUCCESS, ERR_BADR
-from ..common.string_constants import BODY_INSTANCE as BI, BODY_ROLE as BR
-from ..common.name_generator import gen_name
-from .lifetime import (
+from koi_api.orm.access import ORMAccessInstance
+from koi_api.orm.role import ORMUserRoleInstance
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, SUCCESS, ERR_BADR
+from koi_api.common.string_constants import BODY_INSTANCE as BI, BODY_ROLE as BR
+from koi_api.common.name_generator import gen_name
+from koi_api.resources.lifetime import (
     LT_INSTANCE,
     LT_INSTANCE_FINALIZED,
     LT_COLLECTION,
