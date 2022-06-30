@@ -23,18 +23,18 @@ class APIHealth(BaseResource):
 
     def put(self):
         """
-        This function nos not allowed.
+        This function is not allowed.
         """
         return ERR_FORB()
 
     def post(self):
         """
-        This function nos not allowed.
+        This function is not allowed.
         """
         return ERR_FORB()
 
     def delete(self):
         """
-        This function nos not allowed.
+        This function is not allowed.
         """
         return ERR_FORB()
