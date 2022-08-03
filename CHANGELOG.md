@@ -11,3 +11,7 @@
 - changed all import to absolute
 ### 0.4.1
 - quickfix for changes in flask 2.2.0 that break our code
+### 0.4.2
+- removed setup.py
+- added pyproject.toml
+- set versions of dependencies fixed
