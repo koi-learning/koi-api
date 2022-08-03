@@ -9,3 +9,5 @@
 ## 0.4
 - added `/health` node to reflect the koi_system being up and running
 - changed all import to absolute
+### 0.4.1
+- quickfix for changes in flask 2.2.0 that break our code
