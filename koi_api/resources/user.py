@@ -82,7 +82,7 @@ class APIUser(BaseResource):
 
         new_user.user_name = user_name
         new_user.user_hash = hash_password(password)
-        new_user.user_created = datetime.now()
+        new_user.user_created = datetime.utcnow()
         new_user.user_uuid = new_uuid.bytes
         new_user.is_essential = 0
 
@@ -234,7 +234,7 @@ class APILogin(BaseResource):
             return ERR_AUTH()
 
         token_value = None
-        token_created = datetime.now()
+        token_created = datetime.utcnow()
         token_valid = token_created + timedelta(minutes=15)
 
         token = 1
@@ -252,7 +252,7 @@ class APILogin(BaseResource):
 
             # check if token is expired or invalidated
             if token is not None:
-                if token.token_invalidated or (token.token_valid + timedelta(minutes=15)) < datetime.now():
+                if token.token_invalidated or (token.token_valid + timedelta(minutes=15)) < datetime.utcnow():
                     token.token_value = "x" * 32
                     db.session.commit()
                     token = None

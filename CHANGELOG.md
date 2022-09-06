@@ -15,3 +15,5 @@
 - removed setup.py
 - added pyproject.toml
 - set versions of dependencies fixed
+### 0.4.3
+- changed some dt.now() to dt.utcnow()

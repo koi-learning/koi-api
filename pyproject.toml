@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "koi-api"
-version = "0.4.2"
+version = "0.4.3"
 description = "Backend server for the KOI-System"
 license.file = "COPYING.LESSER"
 readme = "README.md"

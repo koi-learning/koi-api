@@ -45,12 +45,12 @@ class BaseResource(Resource):
             return False, None, False
         else:
             # check if the token is invalidated or expired
-            if token.token_invalidated or token.token_valid < datetime.now():
+            if token.token_invalidated or token.token_valid < datetime.utcnow():
                 return False, None, True
             else:
                 # update the token if only 10 more minutes valid time remains
-                if token.token_valid - timedelta(minutes=10) < datetime.now():
-                    token.token_valid = datetime.now() + timedelta(minutes=15)
+                if token.token_valid - timedelta(minutes=10) < datetime.utcnow():
+                    token.token_valid = datetime.utcnow() + timedelta(minutes=15)
                     db.session.commit()
                 # the token is valid, so the user is authenticated
                 return True, token.user, False

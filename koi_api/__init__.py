@@ -83,7 +83,7 @@ def create_app():
                         db_user.user_name = user["name"]
                         db_user.user_uuid = uuid1().bytes
                         db_user.user_hash = resources.user.hash_password(user["password"])
-                        db_user.user_created = datetime.now()
+                        db_user.user_created = datetime.utcnow()
                         db_user.is_essential = user["is_essential"]
                         orm.db.session.add(db_user)
                         orm.db.session.commit()
