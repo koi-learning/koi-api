@@ -17,3 +17,5 @@
 - set versions of dependencies fixed
 ### 0.4.3
 - changed some dt.now() to dt.utcnow()
+### 0.4.4
+- added new field for instance: has_requests -> is used by PWA to show open requests in instance overview

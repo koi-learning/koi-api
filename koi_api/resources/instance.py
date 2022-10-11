@@ -389,6 +389,7 @@ class APIInstance(BaseResource):
                     < instance.instance_samples_last_modified
                 ),
                 BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
+                BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
             }
             for instance in instances
         ]
@@ -525,6 +526,7 @@ class APIInstanceCollection(BaseResource):
                 < instance.instance_samples_last_modified
             ),
             BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
+            BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
         }
 
         valid = LT_INSTANCE
