@@ -38,10 +38,25 @@ For this example, we recommend using `waitress`. You can run:
 pip install waitress
 waitress-server --app koi_api:create_app
 ```
-## Using Docker
-To run a single container hosting *koi-api*, you check out the repository and use the included [Dockerfile](Dockerfile). The docker file will install the needed python packages and waitress.
 
-For a complete setup including all components of the *KOI-System*, please check our project [KOI-Deploy](https://github.com/koi-learning/koi-deploy).
+Prebuild wheels are available on the projects github page.
+## Using Docker
+We offer prebuild Docker-images over the github package registry.
+To configure the service you could use the exposed environment variables or define a custom config und build your own image using our Dockerfile.
+Some usefule enviroment variables are:
+```
+KOI_SQLALCHEMY_DATABASE_URI="sqlite:////koi.db"  # for a local sqlite database
+KOI_SQLALCHEMY_DATABASE_URI="mysql+pymysql://user:password@host/database?charset=utf8mb4"  # for a more complex example using mysql
+
+KOI_FILEPERSISTENCE_BASE_URI="/koi_persist"  # to set the folder used for all data files
+
+KOI_FILEPERSISTENCE_COMPRESS="false"  # to not compress the data files
+```
+
+You can also setup additional roles and users this way.
+See the config files for reference and simply prefix the settings with ```KOI_```.
+
+For a complete setup using Docker, including all components of the *KOI-System*, please check our project [KOI-Deploy](https://github.com/koi-learning/koi-deploy).
 
 
 # Copying & Contributing
