@@ -39,6 +39,9 @@ jobs:
             dist/koi_api-*.whl
             dist/koi-api-*.tar.gz
       
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+      
       - name: "publish docker image"
         run: |
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
