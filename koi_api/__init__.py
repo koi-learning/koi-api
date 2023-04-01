@@ -22,6 +22,7 @@ def create_app():
 
     app.config.from_pyfile("config/base.py")
     app.config.from_envvar("KOI_CONFIG", silent=True)
+    app.config.from_prefixed_env(prefix="KOI")
 
     CORS(app)
 

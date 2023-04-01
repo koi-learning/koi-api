@@ -19,3 +19,7 @@
 - changed some dt.now() to dt.utcnow()
 ### 0.4.4
 - added new field for instance: has_requests -> is used by PWA to show open requests in instance overview
+### 0.4.5
+- added a new workflow for releases
+- added configuration through environment variables starting with KOI_
+- updated the Dockerfile and added automatic releases for docker images.
