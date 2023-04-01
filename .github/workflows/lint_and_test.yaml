@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-xprocess
           pip install git+https://github.com/koi-learning/koi-core
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e .
       - name: Lint with flake8
         run: |
           # lint the code using flake8;
