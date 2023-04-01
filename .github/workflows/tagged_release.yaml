@@ -33,6 +33,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           name: "Release ${{ github.ref_name }}"
+          body_path: CHANGELOG.md
+          generate_release_notes: false
           files: |
             dist/koi_api-*.whl
             dist/koi-api-*.tar.gz  
