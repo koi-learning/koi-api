@@ -23,3 +23,5 @@
 - added a new workflow for releases
 - added configuration through environment variables starting with KOI_
 - updated the Dockerfile and added automatic releases for docker images.
+### 0.4.6
+- reworked the requirement management for linting und test

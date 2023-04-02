@@ -58,6 +58,11 @@ See the config files for reference and simply prefix the settings with ```KOI_``
 
 For a complete setup using Docker, including all components of the *KOI-System*, please check our project [KOI-Deploy](https://github.com/koi-learning/koi-deploy).
 
+## Development Setup
+To install all test and development requirements, checkout the repository and run:
+```bash
+pip install -e .[develop]
+```
 
 # Copying & Contributing
 *koi-api* was originally written by Johannes Richter (GÖPEL electronics, Jena) and Johannes Nau (Technische Universität Ilmenau).

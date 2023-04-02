@@ -25,12 +25,11 @@ def testserver(xprocess):
         cwd = os.getcwd()
 
         my_env = os.environ.copy()
-        my_env["FLASK_APP"] = os.path.join(cwd, "koi_api")
+        my_env["FLASK_APP"] = "koi_api:create_app"
         my_env["KOI_CONFIG"] = "config/debug.py"
-        my_env["FLASK_ENV"] = "development"
         my_env["FLASK_DEBUG"] = "1"
 
-        args = ["python", "-m", "flask", "run", "--no-reload"]
+        args = ["flask", "run", "--no-reload"]
 
         env = my_env
 
