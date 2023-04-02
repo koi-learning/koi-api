@@ -21,5 +21,13 @@ dependencies = [
     "cryptography",
 ]
 
+[project.optional-dependencies]
+develop = [
+    "flake8",
+    "pytest",
+    "pytest-xprocess",
+    "koi-core @ git+https://github.com/koi-learning/koi-core@main",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/koi-learning"
