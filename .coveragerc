@@ -1,0 +1,7 @@
+[run]
+source =
+    koi_api/resources
+    koi_api/orm
+
+[report]
+fail_under = 80
