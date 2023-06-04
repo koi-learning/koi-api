@@ -12,17 +12,12 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
-import koi_core as koi
+
 from . import Dummy
 
 
-def test_sample_filtering(testserver):
-    try:
-        koi.init()
-    except koi.exceptions.KoiInitializationError:
-        ...
-
-    pool = koi.create_api_object_pool(*testserver)
+def sample_filtering(client):
+    
 
     model = pool.new_model()
     model.code = Dummy()

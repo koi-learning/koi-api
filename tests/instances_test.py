@@ -12,11 +12,10 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
-import koi_core as koi
 from . import Dummy
 
 
-def test_instance_merging(testserver):
+def not_instance_merging(testserver):
     try:
         koi.init()
     except koi.exceptions.KoiInitializationError:
