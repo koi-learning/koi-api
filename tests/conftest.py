@@ -1,1 +1,1 @@
-from .fixtures import testserver  # noqa F401
+from .fixtures import app, auth_client  # noqa F401

@@ -13,35 +13,38 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 import pytest
-from xprocess import ProcessStarter
-import os
+from koi_api import create_app
+from flask import Flask
+from flask.testing import FlaskClient
+from typing import Tuple
 
 
-@pytest.fixture
-def testserver(xprocess):
-    class Starter(ProcessStarter):
-        pattern = "Running on http://127.0.0.1:5000"
+@pytest.fixture(scope="session")
+def app() -> Flask:
+    app = create_app()
+    app.config.update({
+        "TESTING": True,
+    })
 
-        cwd = os.getcwd()
+    # other setup can go here
 
-        my_env = os.environ.copy()
-        my_env["FLASK_APP"] = "koi_api:create_app"
-        my_env["KOI_CONFIG"] = "config/debug.py"
-        my_env["FLASK_DEBUG"] = "1"
+    yield app
 
-        args = ["flask", "run", "--no-reload"]
+    # clean up / reset resources here
 
-        env = my_env
 
-        timeout = 30
+@pytest.fixture(scope="session")
+def auth_client(app: Flask) -> Tuple[FlaskClient, dict]:
+    c = app.test_client()
 
-    # ensure process is running and return its logfile
-    logs = xprocess.ensure("testserver", Starter)
+    ret = c.post("/api/login", json={
+        "user_name": "admin",
+        "password": "admin",
+    })
 
-    print(logs)
-
-    conn = ("http://127.0.0.1:5000", "admin", "admin")
-    yield conn
-
-    # clean up whole process tree afterwards
-    xprocess.getinfo("testserver").terminate()
+    assert ret.status_code == 200
+    token = ret.json["token"]
+    header = {
+        "Authorization": f"Bearer {token}",
+    }
+    return app.test_client(), header
