@@ -20,7 +20,7 @@ from koi_api.orm import db
 
 class ORMLabelRequest(db.Model):
     __tablename__ = "labelrequest"
-    #__table_args__ = (Index("idx_labelrequest_label_request_uuid", "label_request_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_labelrequest_label_request_uuid", "label_request_uuid", mysql_length=16),)
     label_request_id = mapped_column(Integer, primary_key=True, unique=True)
     label_request_uuid = mapped_column(LargeBinary(16))
 

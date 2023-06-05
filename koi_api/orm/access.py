@@ -20,7 +20,7 @@ from koi_api.orm import db
 
 class ORMAccessGeneral(db.Model):
     __tablename__ = "accessgeneral"
-    #__table_args__ = (Index("idx_accessgeneral_access_uuid", "access_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_accessgeneral_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = mapped_column(Integer, primary_key=True, unique=True)
     access_uuid = mapped_column(LargeBinary(16))
 
@@ -33,7 +33,7 @@ class ORMAccessGeneral(db.Model):
 
 class ORMAccessInstance(db.Model):
     __tablename__ = "accessinstance"
-    #__table_args__ = (Index("idx_accessinstance_access_uuid", "access_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_accessinstance_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = mapped_column(Integer, primary_key=True, unique=True)
     access_uuid = mapped_column(LargeBinary(16))
     instance_id = mapped_column(Integer, ForeignKey("instance.instance_id"))
@@ -48,7 +48,7 @@ class ORMAccessInstance(db.Model):
 
 class ORMAccessModel(db.Model):
     __tablename__ = "accessmodel"
-    #__table_args__ = (Index("idx_accessmodel_access_uuid", "access_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_accessmodel_access_uuid", "access_uuid", mysql_length=16),)
     acess_id = mapped_column(Integer, primary_key=True, unique=True)
     access_uuid = mapped_column(LargeBinary(16))
     model_id = mapped_column(Integer, ForeignKey("model.model_id"))

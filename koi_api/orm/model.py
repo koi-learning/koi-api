@@ -21,7 +21,7 @@ from koi_api.orm import db
 class ORMModel(db.Model):
     # table name and index
     __tablename__ = "model"
-    #__table_args__ = (Index("idx_model_model_uuid", "model_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_model_model_uuid", "model_uuid", mysql_length=16),)
 
     # basic fields
     model_id = mapped_column(Integer, primary_key=True, unique=True)

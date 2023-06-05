@@ -21,7 +21,7 @@ from koi_api.orm import db
 class ORMInstance(db.Model):
     # table name and index for improved access speeds
     __tablename__ = "instance"
-    #__table_args__ = (Index("idx_instance_instance_uuid", "instance_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_instance_instance_uuid", "instance_uuid", mysql_length=16))
 
     # the basic fields
     instance_id = mapped_column(Integer, primary_key=True, unique=True)
@@ -94,7 +94,7 @@ class ORMInstance(db.Model):
 
 class ORMInstanceInferenceData(db.Model):
     __tablename__ = "inferencedata"
-    #__table_args__ = (Index("idx_inferencedata_data_uuid", "data_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_inferencedata_data_uuid", "data_uuid", mysql_length=16))
 
     data_id = mapped_column(Integer, primary_key=True, unique=True)
     data_uuid = mapped_column(LargeBinary(16))
@@ -111,7 +111,7 @@ class ORMInstanceInferenceData(db.Model):
 
 class ORMInstanceTrainingData(db.Model):
     __tablename__ = "trainingdata"
-    #__table_args__ = (Index("idx_trainingdata_data_uuid", "data_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_trainingdata_data_uuid", "data_uuid", mysql_length=16))
 
     data_id = mapped_column(Integer, primary_key=True, unique=True)
     data_uuid = mapped_column(LargeBinary(16))
@@ -128,7 +128,7 @@ class ORMInstanceTrainingData(db.Model):
 
 class ORMInstanceDescriptor(db.Model):
     __tablename__ = "instancedescriptor"
-    #__table_args__ = (Index("idx_intancedescriptor_descriptor_uuid", "descriptor_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_intancedescriptor_descriptor_uuid", "descriptor_uuid", mysql_length=16))
 
     descriptor_id = mapped_column(Integer, primary_key=True, unique=True)
     descriptor_uuid = mapped_column(LargeBinary(16))

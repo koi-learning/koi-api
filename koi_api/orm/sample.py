@@ -31,7 +31,7 @@ class ORMAssociationTags(db.Model):
 
 class ORMSample(db.Model):
     __tablename__ = "sample"
-    #__table_args__ = (Index("idx_sample_sample_uuid", "sample_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_sample_sample_uuid", "sample_uuid", mysql_length=16))
 
     sample_id = mapped_column(Integer, primary_key=True, unique=True)
     sample_uuid = mapped_column(LargeBinary(16))
@@ -83,7 +83,7 @@ class ORMSample(db.Model):
 
 class ORMSampleData(db.Model):
     __tablename__ = "sampledata"
-    #__table_args__ = (Index("idx_sampledata_data_uuid", "data_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_sampledata_data_uuid", "data_uuid", mysql_length=16))
 
     data_id = mapped_column(Integer, primary_key=True, unique=True)
     data_uuid = mapped_column(LargeBinary(16))
@@ -102,7 +102,7 @@ class ORMSampleData(db.Model):
 
 class ORMSampleLabel(db.Model):
     __tablename__ = "label"
-    #__table_args__ = (Index("idx_label_label_uuid", "label_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_label_label_uuid", "label_uuid", mysql_length=16),)
     label_id = mapped_column(Integer, primary_key=True, unique=True)
     label_uuid = mapped_column(LargeBinary(16))
 

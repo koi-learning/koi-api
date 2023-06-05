@@ -21,7 +21,7 @@ from koi_api.orm import db
 
 class ORMUserRoleGeneral(db.Model):
     __tablename__ = "userrolegeneral"
-    #__table_args__ = (Index("idx_userrolegeneral_role_uuid", "role_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_userrolegeneral_role_uuid", "role_uuid", mysql_length=16),)
 
     role_id = mapped_column(Integer, primary_key=True, unique=True)
     role_name = mapped_column(String(500))
@@ -54,7 +54,7 @@ class ORMUserRoleGeneral(db.Model):
 
 class ORMUserRoleInstance(db.Model):
     __tablename__ = "userroleinstance"
-    #__table_args__ = (Index("idx_userroleinstance_role_uuid", "role_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_userroleinstance_role_uuid", "role_uuid", mysql_length=16))
 
     role_id = mapped_column(Integer, primary_key=True, unique=True)
     role_name = mapped_column(String(500))
@@ -96,7 +96,7 @@ class ORMUserRoleInstance(db.Model):
 
 class ORMUserRoleModel(db.Model):
     __tablename__ = "userrolemodel"
-    #__table_args__ = (Index("idx_userrolemodel_role_uuid", "role_uuid", mysql_length=16))
+    # __table_args__ = (Index("idx_userrolemodel_role_uuid", "role_uuid", mysql_length=16))
 
     role_id = mapped_column(Integer, primary_key=True, unique=True)
     role_name = mapped_column(String(500))

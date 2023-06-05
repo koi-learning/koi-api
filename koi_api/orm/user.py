@@ -16,13 +16,13 @@
 from sqlalchemy.orm import mapped_column, relationship
 from sqlalchemy import Integer, String, LargeBinary, DateTime, Boolean, ForeignKey, select
 from koi_api.orm import db
-from koi_api.orm.access import ORMAccessGeneral, ORMAccessInstance, ORMAccessModel
-from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleInstance, ORMUserRoleModel
+from koi_api.orm.access import ORMAccessGeneral
+from koi_api.orm.role import ORMUserRoleGeneral
 
 
 class ORMUser(db.Model):
     __tablename__ = "user"
-    #__table_args__ = (Index("idx_user_user_uuid", "user_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_user_user_uuid", "user_uuid", mysql_length=16),)
 
     user_id = mapped_column(Integer, primary_key=True, unique=True)
     user_name = mapped_column(String(500), unique=True)
@@ -99,7 +99,7 @@ class ORMUser(db.Model):
 
 class ORMToken(db.Model):
     __tablename__ = "token"
-    #__table_args__ = (Index("idx_token_token_value", "token_value", mysql_length=500))
+    # __table_args__ = (Index("idx_token_token_value", "token_value", mysql_length=500))
     token_id = mapped_column(Integer, primary_key=True, unique=True)
     user_id = mapped_column(Integer, ForeignKey("user.user_id"))
     user = relationship("ORMUser", back_populates="tokens")

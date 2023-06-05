@@ -20,7 +20,7 @@ from koi_api.orm import db
 
 class ORMModelParameter(db.Model):
     __tablename__ = "modelparam"
-    #__table_args__ = (Index("idx_modelparam_param_uuid", "param_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_modelparam_param_uuid", "param_uuid", mysql_length=16),)
 
     param_id = mapped_column(Integer, primary_key=True, unique=True)
     param_uuid = mapped_column(LargeBinary(16))
@@ -36,7 +36,7 @@ class ORMModelParameter(db.Model):
 
 class ORMInstanceParameter(db.Model):
     __tablename__ = "instanceparam"
-    #__table_args__ = (Index("idx_instanceparam_param_uuid", "param_uuid", mysql_length=16),)
+    # __table_args__ = (Index("idx_instanceparam_param_uuid", "param_uuid", mysql_length=16),)
     param_id = mapped_column(Integer, primary_key=True, unique=True)
     param_uuid = mapped_column(LargeBinary(16))
 
