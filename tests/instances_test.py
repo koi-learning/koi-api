@@ -87,6 +87,35 @@ def test_descriptors(auth_client: Tuple[FlaskClient, str]):
     assert ret.data == b"test"
 
 
+def test_delete(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+
+    # create an instance
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 200
+
+    # parse the new instance
+    new_instance = ret.get_json()
+
+    # check that we can see the instance
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == 1
+
+    # delete the instance
+    ret = client.delete(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+
+    # check that we can't see the instance
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == 0
+
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 404
+    
+
 def not_instance_merging(testserver):
     try:
         koi.init()

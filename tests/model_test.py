@@ -104,3 +104,35 @@ def test_finalized_model(auth_client: Tuple[FlaskClient, dict]):
 
     assert ret.status_code == 400
 
+
+def test_delete(auth_client: Tuple[FlaskClient, dict]):
+    client, header = auth_client
+    
+    # get the number of current models
+    ret = client.get("/api/model", headers=header)
+    assert ret.status_code == 200
+    num_models = len(ret.get_json())
+
+    # add a model without information
+    ret = client.post("/api/model", headers=header, json={})
+    assert ret.status_code == 200
+
+    new_obj = ret.get_json()
+
+    # check that the number of models has increased by 1
+    ret = client.get("/api/model", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == num_models + 1
+
+    # delete the model
+    ret = client.delete(f"/api/model/{new_obj['model_uuid']}", headers=header)
+    assert ret.status_code == 200
+
+    # check that the model has been deleted
+    ret = client.get(f"/api/model/{new_obj['model_uuid']}", headers=header)
+    assert ret.status_code == 404
+
+    # check that the number of models has decreased by 1
+    ret = client.get("/api/model", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == num_models
