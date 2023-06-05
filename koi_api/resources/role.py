@@ -13,7 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from uuid import uuid1, UUID
+from uuid import uuid4, UUID
 from koi_api.orm import db
 from koi_api.resources.base import BaseResource, paged, authenticated, user_access, json_request
 from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
@@ -52,7 +52,7 @@ class APIUserRoleGeneral(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleGeneral()
         new_role.role_uuid = new_uuid.bytes
         new_role.is_essential = 0
@@ -268,7 +268,7 @@ class APIUserRoleModel(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleModel()
         new_role.role_uuid = new_uuid.bytes
 
@@ -506,7 +506,7 @@ class APIUserRoleInstance(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleInstance()
         new_role.role_uuid = new_uuid.bytes
 

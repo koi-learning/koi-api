@@ -15,7 +15,7 @@
 
 from koi_api.orm.model import ORMModel
 from koi_api.orm.instance import ORMInstance
-from uuid import UUID, uuid1
+from uuid import UUID, uuid4
 from koi_api.orm import db
 from koi_api.resources.base import (
     BaseResource,
@@ -150,9 +150,9 @@ class APIInstanceParameter(BaseResource):
 
         if instance_param is None:
             instance_param = ORMInstanceParameter()
-            instance_param.param_uuid = uuid1().bytes
+            instance_param.param_uuid = uuid4().bytes
             instance_param.param_value = instance_param_value
-            instance_param.model_param_id = model_param.param_id
+            instance_param.model_param = model_param
             db.session.add(instance_param)
         else:
             instance_param.param_value = instance_param_value

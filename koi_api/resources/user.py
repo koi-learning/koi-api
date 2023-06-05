@@ -15,7 +15,7 @@
 
 from flask_restful import request
 import secrets
-from uuid import uuid1, UUID
+from uuid import uuid4, UUID
 from hashlib import sha256
 from datetime import datetime, timedelta
 from koi_api.common.return_codes import (
@@ -34,6 +34,7 @@ from koi_api.common.string_constants import (
     BODY_GENERAL as BG,
     BODY_ROLE as BR,
 )
+from koi_api.resources.lifetime import LT_SESSION_TOKEN
 from koi_api.common.name_generator import gen_name
 
 
@@ -78,7 +79,7 @@ class APIUser(BaseResource):
             user_name = gen_name() + secrets.token_hex(counter)
             counter += 1
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_user.user_name = user_name
         new_user.user_hash = hash_password(password)
@@ -252,7 +253,7 @@ class APILogin(BaseResource):
 
             # check if token is expired or invalidated
             if token is not None:
-                if token.token_invalidated or (token.token_valid + timedelta(minutes=15)) < datetime.utcnow():
+                if token.token_invalidated or (token.token_valid + timedelta(seconds=LT_SESSION_TOKEN)) < datetime.utcnow():
                     token.token_value = "x" * 32
                     db.session.commit()
                     token = None
@@ -260,7 +261,7 @@ class APILogin(BaseResource):
         # register token
         token = ORMToken()
         token.token_value = token_value
-        token.user_id = user.user_id
+        token.user = user
         token.token_created = token_created
         token.token_valid = token_valid
         token.token_invalidated = False
