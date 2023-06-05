@@ -12,7 +12,79 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
-from . import Dummy
+from . import Dummy, make_empty_model
+from typing import Tuple
+from flask.testing import FlaskClient
+
+
+def test_create(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+
+    # create an instance
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 200
+
+    # parse the new instance
+    new_instance = ret.get_json()
+
+    # modify the instance and read back the changes
+    new_instance["instance_name"] = "test"
+    new_instance["instance_description"] = "test"
+    new_instance["finalized"] = True
+
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header, json=new_instance)
+    assert ret.status_code == 200
+
+    # read back the changes
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+    read_instance = ret.get_json()
+
+    for key in new_instance:
+        assert new_instance[key] == read_instance[key]
+
+
+def test_descriptors(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+
+    # create an instance
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 200
+
+    # parse the new instance
+    new_instance = ret.get_json()
+
+    # create a descriptor
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}/descriptor", headers=header, json={})
+    assert ret.status_code == 200
+
+    # parse the new descriptor
+    new_descriptor = ret.get_json()
+
+    # modify the descriptor and read back the changes
+    new_descriptor["key"] = "test"
+
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}/descriptor/{new_descriptor['descriptor_uuid']}", headers=header, json=new_descriptor)
+    assert ret.status_code == 200
+
+    # read back the changes
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}/descriptor/{new_descriptor['descriptor_uuid']}", headers=header)
+    assert ret.status_code == 200
+    read_descriptor = ret.get_json()
+
+    for key in new_descriptor:
+        assert new_descriptor[key] == read_descriptor[key]
+    
+    # upload a descriptor file
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}/descriptor/{new_descriptor['descriptor_uuid']}/file", headers=header, data=b"test")
+    assert ret.status_code == 200
+
+    # read back the descriptor file
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}/descriptor/{new_descriptor['descriptor_uuid']}/file", headers=header)
+    assert ret.status_code == 200
+    assert ret.data == b"test"
 
 
 def not_instance_merging(testserver):
