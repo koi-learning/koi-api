@@ -14,7 +14,7 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from flask_restful import request
-from uuid import uuid1, UUID
+from uuid import uuid4, UUID
 from koi_api.resources.base import BaseResource, authenticated, paged
 from koi_api.resources.base import instance_access, json_request, model_access, label_request_filter
 from koi_api.orm import db
@@ -69,12 +69,12 @@ class APILabelRequest(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
     def post(self, model_uuid, model, instance_uuid, instance, me, json_object):
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_request = ORMLabelRequest()
         new_request.label_request_uuid = new_uuid.bytes
         new_request.obsolete = 0
-        new_request.label_request_instance_id = instance.instance_id
+        new_request.label_request_instance = instance
 
         if BS.SAMPLE_UUID in json_object:
             sample = instance.samples.filter_by(
@@ -83,7 +83,7 @@ class APILabelRequest(BaseResource):
             if sample is None:
                 ERR_NOFO("unknown sample")
             else:
-                new_request.label_request_sample_id = sample.sample_id
+                new_request.label_request_sample = sample
         else:
             return ERR_BADR("missing field: " + BS.SAMPLE_UUID)
 
@@ -153,11 +153,11 @@ class APILabelRequestCollection(BaseResource):
         label = request.data
         file_pers = persistence.store_file(label)
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_data = ORMSampleLabel()
-        new_data.file_id = file_pers.file_id
-        new_data.sample_id = label_request.sample_id
+        new_data.file = file_pers
+        new_data.sample = label_request
         new_data.label_uuid = new_uuid.bytes
 
         db.session.add(new_data)

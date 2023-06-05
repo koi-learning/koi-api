@@ -96,8 +96,8 @@ class APISampleTag(BaseResource):
                 if current_tag not in sample_tags:
                     # generate new association between sample and tag
                     new_assoc = ORMAssociationTags()
-                    new_assoc.sample_id = sample.sample_id
-                    new_assoc.tag_id = current_tag.tag_id
+                    new_assoc.sample = sample
+                    new_assoc.tag = current_tag
 
                     # check if this association is to be kept when merging?
                     if sample.sample_finalized:
@@ -112,14 +112,13 @@ class APISampleTag(BaseResource):
                 # create a new tag and associate it
                 new_tag = ORMSampleTag()
                 new_tag.tag_name = tag[BT.TAG_NAME]
-                new_tag.instance_id = instance.instance_id
+                new_tag.instance = instance
                 db.session.add(new_tag)
-                db.session.commit()
 
                 # generate new association between sample and tag
                 new_assoc = ORMAssociationTags()
-                new_assoc.sample_id = sample.sample_id
-                new_assoc.tag_id = new_tag.tag_id
+                new_assoc.sample = sample
+                new_assoc.tag = new_tag
 
                 # check if this association is to be kept when merging?
                 if sample.sample_finalized:
@@ -130,9 +129,6 @@ class APISampleTag(BaseResource):
                 db.session.add(new_assoc)
 
                 changed = True
-
-            # commit changes made in this run
-            db.session.commit()
 
         if changed:
             instance.instance_samples_last_modified = datetime.utcnow()

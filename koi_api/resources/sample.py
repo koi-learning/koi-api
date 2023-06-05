@@ -27,7 +27,7 @@ from koi_api.resources.base import (
     sample_label_access,
 )
 from koi_api.resources.base import paged, sample_access, sample_data_access, json_request, sample_filter
-from uuid import UUID, uuid1
+from uuid import UUID, uuid4
 from koi_api.orm.sample import ORMSample, ORMSampleData, ORMSampleLabel, ORMSampleTag
 from koi_api.persistence import persistence
 from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
@@ -140,17 +140,18 @@ class APISample(BaseResource):
             [string]: uuid of new sample
         """
         new_sample = ORMSample()
-        new_sample.instance_id = instance.instance_id
+        new_sample.instance = instance
         new_sample.sample_finalized = 0
-        new_sample.sample_uuid = uuid1().bytes
+        new_sample.sample_uuid = uuid4().bytes
 
         new_sample.sample_last_modified = datetime.utcnow()
         new_sample.sample_etag = token_hex(16)
 
+        db.session.add(new_sample)
+
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        db.session.add(new_sample)
         db.session.commit()
         return SUCCESS(
             {
@@ -368,11 +369,11 @@ class APISampleData(BaseResource):
         if sample.sample_finalized:
             return ERR_BADR("sample is finalized")
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_data = ORMSampleData()
-        new_data.file_id = None
-        new_data.sample_id = sample.sample_id
+        new_data.file = None
+        new_data.sample = sample
         new_data.data_uuid = new_uuid.bytes
 
         if BS.SAMPLE_KEY in json_object:
@@ -640,11 +641,11 @@ class APISampleLabel(BaseResource):
         json_object,
     ):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_label = ORMSampleLabel()
-        new_label.file_id = None
-        new_label.sample_id = sample.sample_id
+        new_label.file = None
+        new_label.sample = sample
         new_label.label_uuid = new_uuid.bytes
 
         if BS.SAMPLE_KEY in json_object:
@@ -890,7 +891,7 @@ class APISampleDataFile(BaseResource):
                 data_raw,
                 mimetype="application/octet-stream",
                 last_modified=data.data_last_modified,
-                cache_timeout=valid,
+                max_age=valid,
             )
 
     @authenticated
@@ -923,7 +924,7 @@ class APISampleDataFile(BaseResource):
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        data.file_id = file_pers.file_id
+        data.file = file_pers
         db.session.add(file_pers)
         db.session.commit()
 
@@ -1020,7 +1021,7 @@ class APISampleLabelFile(BaseResource):
                 data_raw,
                 mimetype="application/octet-stream",
                 last_modified=label.label_last_modified,
-                cache_timeout=LT_SAMPLE,
+                max_age=LT_SAMPLE,
             )
 
         return SUCCESS()
@@ -1045,7 +1046,7 @@ class APISampleLabelFile(BaseResource):
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
-        label.file_id = file_pers.file_id
+        label.file = file_pers
 
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
