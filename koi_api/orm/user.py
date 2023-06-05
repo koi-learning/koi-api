@@ -13,39 +13,45 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy import Integer, String, LargeBinary, DateTime, Boolean, ForeignKey, select
 from koi_api.orm import db
+from koi_api.orm.access import ORMAccessGeneral, ORMAccessInstance, ORMAccessModel
+from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleInstance, ORMUserRoleModel
 
 
 class ORMUser(db.Model):
     __tablename__ = "user"
-    __table_args__ = (db.Index("idx_user_user_uuid", "user_uuid", mysql_length=16),)
+    #__table_args__ = (Index("idx_user_user_uuid", "user_uuid", mysql_length=16),)
 
-    user_id = db.Column(db.Integer, primary_key=True, unique=True)
-    user_name = db.Column(db.String(500), unique=True)
-    user_hash = db.Column(db.LargeBinary(32))
-    user_created = db.Column(db.DateTime)
-    user_uuid = db.Column(db.LargeBinary(16))
-    is_essential = db.Column(db.Boolean)
+    user_id = mapped_column(Integer, primary_key=True, unique=True)
+    user_name = mapped_column(String(500), unique=True)
+    user_hash = mapped_column(LargeBinary(32))
+    user_created = mapped_column(DateTime)
+    user_uuid = mapped_column(LargeBinary(16))
+    is_essential = mapped_column(Boolean)
 
-    tokens = db.relationship(
+    tokens = relationship(
         "ORMToken", back_populates="user", lazy="dynamic", cascade="all, delete"
     )
 
-    access_rights = db.relationship(
+    access_rights = relationship(
         "ORMAccessGeneral", back_populates="user", lazy="dynamic", cascade="all, delete"
     )
 
-    access_rights_instances = db.relationship(
+    access_rights_instances = relationship(
         "ORMAccessInstance",
         back_populates="user",
         lazy="dynamic",
         cascade="all, delete",
     )
-    access_rights_models = db.relationship(
+    access_rights_models = relationship(
         "ORMAccessModel", back_populates="user", lazy="dynamic", cascade="all, delete"
     )
 
     def has_rights(self, rights):
+        stmt = select(ORMAccessGeneral, ORMUserRoleGeneral).join(ORMAccessGeneral.role).where(ORMAccessGeneral.user_id == self.user_id)
+        roles = db.session.scalars(stmt).all()
         roles = [ar.role for ar in self.access_rights.all()]
 
         for right in rights:
@@ -93,14 +99,12 @@ class ORMUser(db.Model):
 
 class ORMToken(db.Model):
     __tablename__ = "token"
-    __table_args__ = (
-        db.Index("idx_token_token_value", "token_value", mysql_length=500),
-    )
-    token_id = db.Column(db.Integer, primary_key=True, unique=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"))
-    user = db.relationship("ORMUser", back_populates="tokens")
+    #__table_args__ = (Index("idx_token_token_value", "token_value", mysql_length=500))
+    token_id = mapped_column(Integer, primary_key=True, unique=True)
+    user_id = mapped_column(Integer, ForeignKey("user.user_id"))
+    user = relationship("ORMUser", back_populates="tokens")
 
-    token_value = db.Column(db.String(500), unique=True)
-    token_created = db.Column(db.DateTime)
-    token_valid = db.Column(db.DateTime)
-    token_invalidated = db.Column(db.Boolean, nullable=False)
+    token_value = mapped_column(String(500), unique=True)
+    token_created = mapped_column(DateTime)
+    token_valid = mapped_column(DateTime)
+    token_invalidated = mapped_column(Boolean, nullable=False)

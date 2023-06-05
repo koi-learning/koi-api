@@ -13,35 +13,37 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy import Integer, String, LargeBinary, ForeignKey
 from koi_api.orm import db
 
 
 class ORMModelParameter(db.Model):
     __tablename__ = "modelparam"
-    __table_args__ = (db.Index("idx_modelparam_param_uuid", "param_uuid", mysql_length=16),)
+    #__table_args__ = (Index("idx_modelparam_param_uuid", "param_uuid", mysql_length=16),)
 
-    param_id = db.Column(db.Integer, primary_key=True, unique=True)
-    param_uuid = db.Column(db.LargeBinary(16))
+    param_id = mapped_column(Integer, primary_key=True, unique=True)
+    param_uuid = mapped_column(LargeBinary(16))
 
-    param_name = db.Column(db.String(500))
-    param_description = db.Column(db.String(500))
-    param_type = db.Column(db.String(500))
-    param_constraint = db.Column(db.String(500))
+    param_name = mapped_column(String(500))
+    param_description = mapped_column(String(500))
+    param_type = mapped_column(String(500))
+    param_constraint = mapped_column(String(500))
 
-    model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
-    model = db.relationship("ORMModel", back_populates="params")
+    model_id = mapped_column(Integer, ForeignKey("model.model_id"))
+    model = relationship("ORMModel", back_populates="params")
 
 
 class ORMInstanceParameter(db.Model):
     __tablename__ = "instanceparam"
-    __table_args__ = (db.Index("idx_instanceparam_param_uuid", "param_uuid", mysql_length=16),)
-    param_id = db.Column(db.Integer, primary_key=True, unique=True)
-    param_uuid = db.Column(db.LargeBinary(16))
+    #__table_args__ = (Index("idx_instanceparam_param_uuid", "param_uuid", mysql_length=16),)
+    param_id = mapped_column(Integer, primary_key=True, unique=True)
+    param_uuid = mapped_column(LargeBinary(16))
 
-    param_value = db.Column(db.String(500))
+    param_value = mapped_column(String(500))
 
-    model_param_id = db.Column(db.Integer, db.ForeignKey("modelparam.param_id"))
-    model_param: ORMModelParameter = db.relationship("ORMModelParameter")
+    model_param_id = mapped_column(Integer, ForeignKey("modelparam.param_id"))
+    model_param = relationship("ORMModelParameter")
 
-    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
-    instance = db.relationship("ORMInstance", back_populates="params")
+    instance_id = mapped_column(Integer, ForeignKey("instance.instance_id"))
+    instance = relationship("ORMInstance", back_populates="params")

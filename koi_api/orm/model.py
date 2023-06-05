@@ -13,74 +13,74 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from koi_api.orm.parameters import ORMModelParameter
-from typing import Iterable
+from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy import Integer, String, DateTime, Boolean, LargeBinary, ForeignKey
 from koi_api.orm import db
 
 
 class ORMModel(db.Model):
     # table name and index
     __tablename__ = "model"
-    __table_args__ = (db.Index("idx_model_model_uuid", "model_uuid", mysql_length=16),)
+    #__table_args__ = (Index("idx_model_model_uuid", "model_uuid", mysql_length=16),)
 
     # basic fields
-    model_id = db.Column(db.Integer, primary_key=True, unique=True)
-    model_name = db.Column(db.String(500))
-    model_description = db.Column(db.String(500))
-    model_uuid = db.Column(db.LargeBinary(16))
-    model_finalized = db.Column(db.Boolean)
-    model_last_modified = db.Column(db.DateTime, nullable=False)
-    model_instances_last_modified = db.Column(db.DateTime, nullable=False)
-    model_etag = db.Column(db.String(50))
-    model_instances_etag = db.Column(db.String(50))
+    model_id = mapped_column(Integer, primary_key=True, unique=True)
+    model_name = mapped_column(String(500))
+    model_description = mapped_column(String(500))
+    model_uuid = mapped_column(LargeBinary(16), index=True)
+    model_finalized = mapped_column(Boolean)
+    model_last_modified = mapped_column(DateTime, nullable=False)
+    model_instances_last_modified = mapped_column(DateTime, nullable=False)
+    model_etag = mapped_column(String(50))
+    model_instances_etag = mapped_column(String(50))
 
     # blob containing the model code
-    code_id = db.Column(db.Integer, db.ForeignKey("modelcode.code_id"))
-    code = db.relationship("ORMModelCode", cascade="all, delete")
+    code_id = mapped_column(Integer, ForeignKey("modelcode.code_id"))
+    code = relationship("ORMModelCode", cascade="all, delete")
 
     # blob containing the visual plugin
-    visual_plugin_id = db.Column(db.Integer, db.ForeignKey("visualplugin.plugin_id"))
-    visual_plugin = db.relationship("ORMModelVisualPlugin", cascade="all, delete")
+    visual_plugin_id = mapped_column(Integer, ForeignKey("visualplugin.plugin_id"))
+    visual_plugin = relationship("ORMModelVisualPlugin", cascade="all, delete")
 
     # blob containing the request_plugin
-    request_plugin_id = db.Column(db.Integer, db.ForeignKey("requestplugin.plugin_id"))
-    request_plugin = db.relationship(
+    request_plugin_id = mapped_column(Integer, ForeignKey("requestplugin.plugin_id"))
+    request_plugin = relationship(
         "ORMModelLabelRequestPlugin", cascade="all, delete"
     )
 
     # the instances running this model
-    instances = db.relationship(
+    instances = relationship(
         "ORMInstance", back_populates="model", lazy="dynamic", cascade="all, delete-orphan"
     )
 
     # model parameters
-    params: Iterable[ORMModelParameter] = db.relationship("ORMModelParameter", lazy="dynamic", cascade="all, delete")
+    params = relationship("ORMModelParameter", cascade="all, delete")
 
     # access granted to users
-    granted_users = db.relationship(
+    granted_users = relationship(
         "ORMAccessModel", back_populates="model", lazy="dynamic", cascade="all, delete"
     )
 
 
 class ORMModelCode(db.Model):
     __tablename__ = "modelcode"
-    code_id = db.Column(db.Integer(), primary_key=True, unique=True)
+    code_id = mapped_column(Integer(), primary_key=True, unique=True)
 
-    file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
-    file = db.relationship("ORMFile", cascade="all, delete")
+    file_id = mapped_column(Integer, ForeignKey("file.file_id"))
+    file = relationship("ORMFile", cascade="all, delete")
 
 
 class ORMModelVisualPlugin(db.Model):
     __tablename__ = "visualplugin"
-    plugin_id = db.Column(db.Integer, primary_key=True, unique=True)
+    plugin_id = mapped_column(Integer, primary_key=True, unique=True)
 
-    file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
-    file = db.relationship("ORMFile", cascade="all, delete")
+    file_id = mapped_column(Integer, ForeignKey("file.file_id"))
+    file = relationship("ORMFile", cascade="all, delete")
 
 
 class ORMModelLabelRequestPlugin(db.Model):
     __tablename__ = "requestplugin"
-    plugin_id = db.Column(db.Integer, primary_key=True, unique=True)
+    plugin_id = mapped_column(Integer, primary_key=True, unique=True)
 
-    file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
-    file = db.relationship("ORMFile", cascade="all, delete")
+    file_id = mapped_column(Integer, ForeignKey("file.file_id"))
+    file = relationship("ORMFile", cascade="all, delete")

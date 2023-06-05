@@ -13,23 +13,25 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy import Integer, LargeBinary, Boolean, ForeignKey
 from koi_api.orm import db
 
 
 class ORMLabelRequest(db.Model):
     __tablename__ = "labelrequest"
-    __table_args__ = (db.Index("idx_labelrequest_label_request_uuid", "label_request_uuid", mysql_length=16),)
-    label_request_id = db.Column(db.Integer, primary_key=True, unique=True)
-    label_request_uuid = db.Column(db.LargeBinary(16))
+    #__table_args__ = (Index("idx_labelrequest_label_request_uuid", "label_request_uuid", mysql_length=16),)
+    label_request_id = mapped_column(Integer, primary_key=True, unique=True)
+    label_request_uuid = mapped_column(LargeBinary(16))
 
-    obsolete = db.Column(db.Boolean)
+    obsolete = mapped_column(Boolean)
 
-    label_request_sample_id = db.Column(db.Integer, db.ForeignKey("sample.sample_id"))
+    label_request_sample_id = mapped_column(Integer, ForeignKey("sample.sample_id"))
 
-    sample = db.relationship("ORMSample", back_populates="label_requests")
+    sample = relationship("ORMSample", back_populates="label_requests")
 
-    label_request_instance_id = db.Column(
-        db.Integer, db.ForeignKey("instance.instance_id")
+    label_request_instance_id = mapped_column(
+        Integer, ForeignKey("instance.instance_id")
     )
 
-    instance = db.relationship("ORMInstance", back_populates="label_requests")
+    instance = relationship("ORMInstance", back_populates="label_requests")
