@@ -13,7 +13,7 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-SQLALCHEMY_DATABASE_URI = "sqlite:///test.db"
+SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 FILEPERSISTENCE_COMPRESS = True
