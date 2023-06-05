@@ -17,17 +17,20 @@
 LT_COLLECTION = 0
 
 # life time of model objects
-LT_MODEL = 10
-LT_MODEL_FINALIZED = 25
+LT_MODEL = 1
+LT_MODEL_FINALIZED = 5
 
 # lifetime of instance objects
-LT_INSTANCE = 10
-LT_INSTANCE_FINALIZED = 25
+LT_INSTANCE = 1
+LT_INSTANCE_FINALIZED = 5
 LT_INSTANCE_DESCRIPTOR = 1
 
 # lifetime of sample objects
-LT_SAMPLE = 10
-LT_SAMPLE_FINALIZED = 25
+LT_SAMPLE = 1
+LT_SAMPLE_FINALIZED = 3
 
 # lifetime of inference data
-LT_INFERENCE_DATA = 1800
+LT_INFERENCE_DATA = 5
+
+# lifetime of session token
+LT_SESSION_TOKEN = 3600
