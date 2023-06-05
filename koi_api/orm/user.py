@@ -50,7 +50,11 @@ class ORMUser(db.Model):
     )
 
     def has_rights(self, rights):
-        stmt = select(ORMAccessGeneral, ORMUserRoleGeneral).join(ORMAccessGeneral.role).where(ORMAccessGeneral.user_id == self.user_id)
+        stmt = select(ORMAccessGeneral, ORMUserRoleGeneral).join(
+            ORMAccessGeneral.role
+        ).where(
+            ORMAccessGeneral.user_id == self.user_id
+        )
         roles = db.session.scalars(stmt).all()
         roles = [ar.role for ar in self.access_rights.all()]
 
