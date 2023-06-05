@@ -18,9 +18,12 @@ from datetime import datetime, timedelta
 import functools
 import re
 from uuid import UUID
+from sqlalchemy import select
 from koi_api.orm import db
 from koi_api.orm.user import ORMToken, ORMUser
 from koi_api.orm.model import ORMModel
+from koi_api.orm.instance import ORMInstance, ORMInstanceDescriptor
+from koi_api.orm.sample import ORMSample, ORMSampleData, ORMSampleLabel
 from koi_api.common.string_constants import (
     HEADER_TOKEN,
     BODY_GENERAL as BG,
@@ -39,7 +42,8 @@ class BaseResource(Resource):
 
     def check_token(self, token_value):
         # get the token with the matching value
-        token = ORMToken.query.filter_by(token_value=token_value).one_or_none()
+        stmt = select(ORMToken).where(ORMToken.token_value == token_value)
+        token = db.session.scalars(stmt).one_or_none()
         if token is None:
             # the token is unknown, so the user is not authenticated
             return False, None, False
@@ -50,7 +54,7 @@ class BaseResource(Resource):
             else:
                 # update the token if only 10 more minutes valid time remains
                 if token.token_valid - timedelta(minutes=10) < datetime.utcnow():
-                    token.token_valid = datetime.utcnow() + timedelta(minutes=15)
+                    token.token_valid = datetime.utcnow() + timedelta(minutes=60)
                     db.session.commit()
                 # the token is valid, so the user is authenticated
                 return True, token.user, False
@@ -117,9 +121,11 @@ def user_access(rights):
         @functools.wraps(func)
         def wrapperU(self, *args, me, **kwargs):
             if BU.USER_UUID in kwargs.keys():
-                user = ORMUser.query.filter_by(
-                    user_uuid=UUID(kwargs[BU.USER_UUID]).bytes
-                ).one_or_none()
+                stmt_user = select(ORMUser).where(
+                    ORMUser.user_uuid == UUID(kwargs[BU.USER_UUID]).bytes
+                )
+                user = db.session.scalars(stmt_user).one_or_none()
+
                 if user is None:
                     return ERR_NOFO("user uuid unknown")
                 if user.user_id == me.user_id:
@@ -153,9 +159,10 @@ def model_access(rights):
         def wrapperM(self, *args, me, **kwargs):
             if BM.MODEL_UUID not in kwargs:
                 return ERR_BADR("missing model_uuid")
-            model = ORMModel.query.filter_by(
-                model_uuid=UUID(kwargs[BM.MODEL_UUID]).bytes
-            ).one_or_none()
+            stmt_model = select(ORMModel).where(
+                ORMModel.model_uuid == UUID(kwargs[BM.MODEL_UUID]).bytes
+            )
+            model = db.session.scalars(stmt_model).one_or_none()
 
             if model is None:
                 return ERR_NOFO("model unknown")
@@ -185,9 +192,11 @@ def instance_access(rights):
         def wrapperM(self, *args, me, model, **kwargs):
             if BI.INSTANCE_UUID not in kwargs:
                 return ERR_BADR("missing instance_uuid")
-            instance = model.instances.filter_by(
-                instance_uuid=UUID(kwargs[BI.INSTANCE_UUID]).bytes
-            ).one_or_none()
+            stmt_inst = select(ORMInstance).where(
+                ORMInstance.instance_uuid == UUID(kwargs[BI.INSTANCE_UUID]).bytes,
+                ORMInstance.model_id == model.model_id,
+            )
+            instance = db.session.scalars(stmt_inst).one_or_none()
 
             if instance is None:
                 return ERR_NOFO("instance unknown")
@@ -257,9 +266,11 @@ def sample_access(func):
     def wrapperS(self, *args, instance, **kwargs):
         if BS.SAMPLE_UUID not in kwargs:
             return ERR_BADR("missing sample_uuid")
-        sample = instance.samples.filter_by(
-            sample_uuid=UUID(kwargs[BS.SAMPLE_UUID]).bytes
-        ).one_or_none()
+        stmt_sample = select(ORMSample).where(
+            ORMSample.sample_uuid == UUID(kwargs[BS.SAMPLE_UUID]).bytes,
+            ORMSample.instance_id == instance.instance_id,
+        )
+        sample = db.session.scalars(stmt_sample).one_or_none()
 
         if sample is None:
             return ERR_NOFO("sample is unknown")
@@ -276,9 +287,11 @@ def sample_data_access(func):
     def wrapperS(self, *args, sample, **kwargs):
         if BS.SAMPLE_DATA_UUID not in kwargs:
             return ERR_BADR("missing saple_data_uuid")
-        data = sample.data.filter_by(
-            data_uuid=UUID(kwargs[BS.SAMPLE_DATA_UUID]).bytes
-        ).one_or_none()
+        stmt_data = select(ORMSampleData).where(
+            ORMSampleData.data_uuid == UUID(kwargs[BS.SAMPLE_DATA_UUID]).bytes,
+            ORMSampleData.sample_id == sample.sample_id,
+        )
+        data = db.session.scalars(stmt_data).one_or_none()
 
         if data is None:
             return ERR_NOFO("data is unknown")
@@ -295,9 +308,11 @@ def sample_label_access(func):
     def wrapperS(self, *args, sample, **kwargs):
         if BS.SAMPLE_LABEL_UUID not in kwargs:
             return ERR_BADR("missing saple_uuid")
-        label = sample.label.filter_by(
-            label_uuid=UUID(kwargs[BS.SAMPLE_LABEL_UUID]).bytes
-        ).one_or_none()
+        stmt_lbl = select(ORMSampleLabel).where(
+            ORMSampleLabel.label_uuid == UUID(kwargs[BS.SAMPLE_LABEL_UUID]).bytes,
+            ORMSampleLabel.sample_id == sample.sample_id,
+        )
+        label = db.session.scalars(stmt_lbl).one_or_none()
 
         if label is None:
             return ERR_NOFO("label is unknown")
@@ -314,9 +329,11 @@ def descriptor_access(func):
     def wrapperD(self, *args, instance, **kwargs):
         if BI.INSTANCE_DESCRIPTOR_UUID not in kwargs:
             return ERR_BADR("missing descriptor uuid")
-        descriptor = instance.instance_descriptors.filter_by(
-            descriptor_uuid=UUID(kwargs[BI.INSTANCE_DESCRIPTOR_UUID]).bytes
-        ).one_or_none()
+        stmt_desc = select(ORMInstanceDescriptor).where(
+            ORMInstanceDescriptor.descriptor_uuid == UUID(kwargs[BI.INSTANCE_DESCRIPTOR_UUID]).bytes,
+            ORMInstanceDescriptor.descriptor_instance_id == instance.instance_id,
+        )
+        descriptor = db.session.scalars(stmt_desc).one_or_none()
 
         if descriptor is None:
             return ERR_NOFO("descriptor unknown")
