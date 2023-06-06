@@ -13,9 +13,38 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from . import Dummy
+from . import Dummy, make_empty_instance, make_empty_model
+from typing import Tuple
+from flask.testing import FlaskClient
 
 
+def test_create(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    samples = []
+
+    # create 10 samples
+    for _ in range(10):
+        sample = client.post(
+            f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+            json={},  # empty sample
+            headers=header,
+        )
+        assert sample.status_code == 200
+        samples.append(sample.get_json())
+
+    # check that the sample is there
+    ret = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        headers=header,
+    )
+    assert ret.status_code == 200
+    ret = ret.get_json()
+    assert len(ret) == 10
+    
 def sample_filtering(client):
     
 
