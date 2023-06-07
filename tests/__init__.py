@@ -12,6 +12,7 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
+
 from zipfile import ZipFile
 from io import BytesIO
 from typing import Tuple
@@ -19,15 +20,17 @@ from flask.testing import FlaskClient
 
 
 class Dummy:
-    def toBytes(self):
-        data = BytesIO()
-        f = ZipFile(data, "w")
-        model_file = f.open("__model__.py", "w")
-        model_file.write(b"")
-        model_file.close()
-        f.close()
+    def __init__(self, exclude_params: bool = False):
+        self.data = BytesIO()
+        with ZipFile(self.data, "w") as zip:
+            with open("./tests/fixtures/model/__model__.py", "rb") as f:
+                zip.writestr("__model__.py", f.read())
+            if not exclude_params:
+                with open("./tests/fixtures/model/__param__.py", "rb") as f:
+                    zip.writestr("__param__.py", f.read())
 
-        return data.getvalue()
+    def toBytes(self):
+        return self.data.getvalue()
 
 
 def make_empty_model(auth_client: Tuple[FlaskClient, str]):
