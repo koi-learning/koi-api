@@ -120,13 +120,15 @@ class APIInstanceDescriptor(BaseResource):
         )
 
     @authenticated
-    @model_access([BR.ROLE_SEE_INSTANCE])
-    def put(self, model_uuid, model, me):
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    def put(self, model, model_uuid, me, instance, instance_uuid):
         return ERR_FORB()
 
     @authenticated
-    @model_access([BR.ROLE_SEE_INSTANCE])
-    def delete(self, model_uuid, model, me):
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    def delete(self, model, model_uuid, me, instance, instance_uuid):
         return ERR_FORB()
 
 
@@ -635,7 +637,7 @@ class APIInstanceInferenceData(BaseResource):
 
             # TODO: prevent existing inferencedata to become orphaned
             newRequest = ORMInstanceInferenceData()
-            newRequest.data_file = file_pers
+            newRequest.file = file_pers
             newRequest.data_uuid = uuid4().bytes
             newRequest.data_last_modified = datetime.utcnow()
             newRequest.data_etag = token_hex(16)
@@ -679,7 +681,7 @@ class APIInstanceTrainingData(BaseResource):
                 "",
                 last_modified=instance.training_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
-                etag=instance.trainins_data.data_etag,
+                etag=instance.training_data.data_etag,
             )
 
     @authenticated
@@ -707,7 +709,7 @@ class APIInstanceTrainingData(BaseResource):
 
             # TODO: prevent existing inferencedata to become orphaned
             newRequest = ORMInstanceTrainingData()
-            newRequest.data_file = file_pers
+            newRequest.file = file_pers
             newRequest.data_uuid = new_uuid.bytes
             newRequest.data_last_modified = datetime.utcnow()
             newRequest.data_etag = token_hex(16)
