@@ -33,7 +33,7 @@ class Dummy:
         return self.data.getvalue()
 
 
-def make_empty_model(auth_client: Tuple[FlaskClient, str]):
+def make_empty_model(auth_client: Tuple[FlaskClient, str], finalized=True):
     client, header = auth_client
 
     # add a model without information
@@ -48,10 +48,11 @@ def make_empty_model(auth_client: Tuple[FlaskClient, str]):
     ret = client.post(f"/api/model/{new_model['model_uuid']}/code", headers=header, data=d.toBytes())
     assert ret.status_code == 200
 
-    # finalize the model
-    new_model["finalized"] = True
-    ret = client.put(f"/api/model/{new_model['model_uuid']}", headers=header, json=new_model)
-    assert ret.status_code == 200
+    if finalized:
+        # finalize the model
+        new_model["finalized"] = True
+        ret = client.put(f"/api/model/{new_model['model_uuid']}", headers=header, json=new_model)
+        assert ret.status_code == 200
 
     return new_model
 
