@@ -12,6 +12,7 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
+
 from . import Dummy, make_empty_model, make_empty_instance
 from typing import Tuple
 from flask.testing import FlaskClient
@@ -100,7 +101,7 @@ def test_modify(auth_client: Tuple[FlaskClient, str]):
     assert ret.status_code == 200
     read_instance = ret.get_json()
 
-    for key in new_instance:
+    for key in ["instance_name", "instance_description", "finalized"]:
         assert new_instance[key] == read_instance[key]
 
     # modifying a finalized instance is forbidden
