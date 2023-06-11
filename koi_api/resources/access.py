@@ -44,7 +44,7 @@ class APIGeneralAccess(BaseResource):
         Get all access rights granted in general
         """
         stmt = select(ORMAccessGeneral).offset(page_offset).limit(page_limit)
-        granted_users = db.session.execute(stmt).all()
+        granted_users = db.session.scalars(stmt).all()
 
         response = [
             {
