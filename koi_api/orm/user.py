@@ -108,7 +108,7 @@ class ORMToken(db.Model):
     user_id = mapped_column(Integer, ForeignKey("user.user_id"))
     user = relationship("ORMUser", back_populates="tokens")
 
-    token_value = mapped_column(String(500), unique=True)
+    token_value = mapped_column(String(500))
     token_created = mapped_column(DateTime)
     token_valid = mapped_column(DateTime)
     token_invalidated = mapped_column(Boolean, nullable=False)
