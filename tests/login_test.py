@@ -16,6 +16,29 @@
 from flask.testing import FlaskClient
 from datetime import datetime
 from typing import Tuple
+from time import sleep
+
+
+def test_forbidden(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+
+    ret = client.get("/api/logout")
+    assert ret.status_code == 405
+
+    ret = client.put("/api/logout")
+    assert ret.status_code == 405
+
+    ret = client.delete("/api/logout")
+    assert ret.status_code == 405
+
+    ret = client.get("/api/login")
+    assert ret.status_code == 405
+
+    ret = client.put("/api/login")
+    assert ret.status_code == 405
+
+    ret = client.delete("/api/login")
+    assert ret.status_code == 405
 
 
 def test_correct(auth_client: Tuple[FlaskClient, dict]):
@@ -47,3 +70,50 @@ def test_wrong_password(auth_client: Tuple[FlaskClient, dict]):
         "password": "wrong"
         })
     assert ret.status_code == 401
+
+
+def test_incomplete(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.post("/api/login", json={
+        "user_name": "guest",
+        })
+    assert ret.status_code == 400
+
+    ret = client.post("/api/login", json={
+        "password": "guest",
+        })
+    assert ret.status_code == 400
+
+
+def test_unknown_user(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.post("/api/login", json={
+        "user_name": "unknown",
+        "password": "guest"
+        })
+    assert ret.status_code == 404
+
+
+def test_exhausted_tokenspace(auth_client: Tuple[FlaskClient, dict], monkeypatch):
+    client, _ = auth_client
+
+    # monkeypatch the token_hex generator to alwyas return the same value
+    with monkeypatch.context() as m:
+        m.setattr("secrets.token_hex", lambda _: "0" * 32)
+
+        # login 1
+        ret = client.post("/api/login", json={
+            "user_name": "guest",
+            "password": "guest"
+        })
+        
+        assert ret.status_code == 200
+
+        # login 2
+
+        ret = client.post("/api/login", json={
+            "user_name": "guest",
+            "password": "guest"
+        })
+
+        assert ret.status_code == 500
