@@ -51,7 +51,8 @@ class APIUser(BaseResource):
         """
         Get a list of all users
         """
-        users = ORMUser.query.offset(page_offset).limit(page_limit).all()
+        stmt_users = select(ORMUser).offset(page_offset).limit(page_limit)
+        users = db.session.scalars(stmt_users).all()
 
         return SUCCESS([{BU.USER_UUID: UUID(bytes=u.user_uuid).hex, BU.USER_NAME: u.user_name} for u in users])
 
@@ -75,10 +76,13 @@ class APIUser(BaseResource):
         else:
             password = secrets.token_hex(16)
 
-        counter = 1
-        while not ORMUser.query.filter_by(user_name=user_name).one_or_none() is None:
-            user_name = gen_name() + secrets.token_hex(counter)
-            counter += 1
+        user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
+        user = db.session.scalars(user_stmt).one_or_none()
+
+        while not user is None:
+            user_name = user_name + secrets.token_hex(2)
+            user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
+            user = db.session.scalars(user_stmt).one_or_none()
 
         new_uuid = uuid4()
 
@@ -105,7 +109,6 @@ class APIUserCollection(BaseResource):
     """
     DOCSTRING
     """
-
     @authenticated
     @user_access([])
     def get(self, user_uuid, me, user):
@@ -133,7 +136,9 @@ class APIUserCollection(BaseResource):
 
         # update the user fields if transmitted
         if BU.USER_NAME in json_object:
-            if ORMUser.query.filter_by(user_name=json_object[BU.USER_NAME]).one_or_none() is None:
+            user_probe_stmt = select(ORMUser).where(ORMUser.user_name == json_object[BU.USER_NAME])
+            user_probe = db.session.scalars(user_probe_stmt).one_or_none()
+            if user_probe is None:
                 user.user_name = json_object[BU.USER_NAME]
             else:
                 return ERR_TAKE("user name is taken")
@@ -158,6 +163,7 @@ class APIUserCollection(BaseResource):
         # we need to invalidate all user tokens
         for token in user.tokens.all():
             token.token_invalidated = True
+            token.token_value = "x"
 
         # delete the user entry
         db.session.delete(user)
