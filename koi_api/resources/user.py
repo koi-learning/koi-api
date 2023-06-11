@@ -79,7 +79,7 @@ class APIUser(BaseResource):
         user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
         user = db.session.scalars(user_stmt).one_or_none()
 
-        while not user is None:
+        while user is not None:
             user_name = user_name + secrets.token_hex(2)
             user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
             user = db.session.scalars(user_stmt).one_or_none()
