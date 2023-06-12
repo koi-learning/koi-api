@@ -28,7 +28,7 @@ from koi_api.resources.base import (
 from koi_api.orm.user import ORMUser
 from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
 from koi_api.orm.access import ORMAccessGeneral, ORMAccessModel, ORMAccessInstance
-from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
+from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS, ERR_TAKE
 from koi_api.common.string_constants import (
     BODY_USER as BU,
     BODY_ACCESS as BA,
@@ -105,13 +105,13 @@ class APIGeneralAccess(BaseResource):
 
         # check if this access is already granted?
         if check is not None:
-            return ERR_FORB()
+            return ERR_TAKE()
 
         # add the new access right
         new_uuid = uuid4()
         new_access = ORMAccessGeneral()
-        new_access.user = query_user.user
-        new_access.role = query_role.role
+        new_access.user = query_user
+        new_access.role = query_role
         new_access.access_uuid = new_uuid.bytes
         db.session.add(new_access)
         db.session.commit()
@@ -125,11 +125,11 @@ class APIGeneralAccess(BaseResource):
         return SUCCESS(response)
 
     @authenticated
-    def put(self):
+    def put(self, me):
         return ERR_FORB()
 
     @authenticated
-    def delete(self):
+    def delete(self, me):
         return ERR_FORB()
 
 
@@ -189,10 +189,8 @@ class APIModelAccess(BaseResource):
         """
         Get all access rights granted for a particular model
         """
-        stmt = select(model.granted_users, ORMUser, ORMUserRoleModel).join(
-            ORMAccessModel.user
-        ).join(
-            ORMAccessModel.role
+        stmt = select(ORMAccessModel).where(
+            ORMAccessModel.model_id == model.model_id
         ).offset(page_offset).limit(page_limit)
         access_rights = db.session.scalars(stmt).all()
 
@@ -247,22 +245,22 @@ class APIModelAccess(BaseResource):
             return ERR_NOFO("unknown role_uuid")
 
         stmt = select(ORMAccessModel).where(
-            ORMAccessModel.model_id == model.id,
+            ORMAccessModel.model_id == model.model_id,
             ORMAccessModel.user_id == granted_user.user_id,
             ORMAccessModel.role_id == role.role_id
         )
-        already_granted = db.session.scalars(stmt).first()
+        already_granted = db.session.scalars(stmt).one_or_none()
 
         if already_granted is not None:
-            return ERR_BADR("access right already granted!")
+            return ERR_TAKE("access right already granted!")
 
         # add the new access right
         new_uuid = uuid4()
 
         new_access = ORMAccessModel()
-        new_access.model = model.model
-        new_access.user = granted_user.user
-        new_access.role = role.role
+        new_access.model = model
+        new_access.user = granted_user
+        new_access.role = role
         new_access.access_uuid = new_uuid.bytes
 
         db.session.add(new_access)
@@ -291,13 +289,11 @@ class APIModelAccessCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me, access_uuid):
         # get the requested access object
-        stmt = select(model.granted_users, ORMUser, ORMUserRoleModel).join(
-            ORMAccessModel.user
-        ).join(
-            ORMAccessModel.role
-        ).where(
-            ORMAccessModel.access_uuid == UUID(access_uuid).bytes
+        stmt = select(ORMAccessModel).where(
+            ORMAccessModel.access_uuid == UUID(access_uuid).bytes,
+            ORMAccessModel.model_id == model.model_id
         )
+
         access = db.session.scalars(stmt).one_or_none()
 
         if access is None:
@@ -306,8 +302,8 @@ class APIModelAccessCollection(BaseResource):
         # build the response
         response = {
             BA.ACCESS_UUID: UUID(bytes=access.access_uuid).hex,
-            BU.USER_UUID: UUID(bytes=access.user_uuid).hex,
-            BR.ROLE_UUID: UUID(bytes=access.role_uuid).hex,
+            BU.USER_UUID: UUID(bytes=access.user.user_uuid).hex,
+            BR.ROLE_UUID: UUID(bytes=access.role.role_uuid).hex,
         }
         return SUCCESS(response)
 
@@ -325,8 +321,9 @@ class APIModelAccessCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL, BR.ROLE_GRANT_ACCESS_MODEL])
     def delete(self, model_uuid, model, me, access_uuid):
         # get the requested access object
-        stmt = select(model.granted_users).where(
-            ORMAccessModel.access_uuid == UUID(access_uuid).bytes
+        stmt = select(ORMAccessModel).where(
+            ORMAccessModel.access_uuid == UUID(access_uuid).bytes,
+            ORMAccessModel.model_id == model.model_id
         )
         access = db.session.scalars(stmt).one_or_none()
 
@@ -351,15 +348,11 @@ class APIInstanceAccess(BaseResource):
         Get all access rights granted for a particular instance
         """
         # get all granted users
-        stmt = select(instance.granted_users, ORMUser, ORMUserRoleInstance).join(
-            ORMAccessInstance.user
-        ).join(
-            ORMAccessInstance.role
+
+        stmt = select(ORMAccessInstance).where(
+            ORMAccessInstance.instance_id == instance.instance_id
         ).offset(page_offset).limit(page_limit)
         granted_users = db.session.scalars(stmt).all()
-
-        if len(granted_users) > self.MAX_PAGE:
-            return ERR_BADR()
 
         response = [
             {
@@ -394,12 +387,15 @@ class APIInstanceAccess(BaseResource):
         else:
             return ERR_BADR("missing field: " + BR.ROLE_UUID)
 
-        granted_user = ORMUser.query.filter_by(
-            user_uuid=granted_user_uuid.bytes
-        ).one_or_none()
-        granted_role = ORMUserRoleInstance.query.filter_by(
-            role_uuid=granted_role_uuid.bytes
-        ).one_or_none()
+        stmt_user = select(ORMUser).where(
+            ORMUser.user_uuid == granted_user_uuid.bytes
+        )
+        stmt_role = select(ORMUserRoleInstance).where(
+            ORMUserRoleInstance.role_uuid == granted_role_uuid.bytes
+        )
+
+        granted_user = db.session.scalars(stmt_user).one_or_none()
+        granted_role = db.session.scalars(stmt_role).one_or_none()
 
         if granted_user is None:
             return ERR_NOFO("unknown user_uuid")
@@ -407,19 +403,22 @@ class APIInstanceAccess(BaseResource):
         if granted_role is None:
             return ERR_NOFO("unknown role_uuid")
 
-        check = instance.granted_users.filter_by(
-            user_id=granted_user.user_id, role_id=granted_role.role_id
-        ).one_or_none()
+        stmt = select(ORMAccessInstance).where(
+            ORMAccessInstance.instance_id == instance.instance_id,
+            ORMAccessInstance.user_id == granted_user.user_id,
+            ORMAccessInstance.role_id == granted_role.role_id
+        )
+        check = db.session.scalars(stmt).one_or_none()
 
         if check is not None:
-            return ERR_BADR()
+            return ERR_TAKE()
 
         # add the new access right
         new_uuid = uuid4()
         new_access = ORMAccessInstance()
-        new_access.instance = instance.instance
-        new_access.user = granted_user.user
-        new_access.role = granted_role.role
+        new_access.instance = instance
+        new_access.user = granted_user
+        new_access.role = granted_role
         new_access.access_uuid = new_uuid.bytes
         db.session.add(new_access)
         db.session.commit()
@@ -451,12 +450,9 @@ class APIInstanceAccessCollection(BaseResource):
     def get(self, model_uuid, model, instance_uuid, instance, me, access_uuid):
 
         # get the access object
-        stmt = select(instance.granted_users, ORMUser, ORMUserRoleInstance).join(
-            ORMAccessInstance.user
-        ).join(
-            ORMAccessInstance.role
-        ).where(
-            ORMAccessInstance.access_uuid == UUID(access_uuid).bytes
+        stmt = select(ORMAccessInstance).where(
+            ORMAccessInstance.access_uuid == UUID(access_uuid).bytes,
+            ORMAccessInstance.instance_id == instance.instance_id
         )
         access = db.session.scalars(stmt).one_or_none()
 
@@ -466,8 +462,8 @@ class APIInstanceAccessCollection(BaseResource):
         # construct the response
         response = {
             BA.ACCESS_UUID: UUID(bytes=access.access_uuid).hex,
-            BU.USER_UUID: UUID(bytes=access.user_uuid).hex,
-            BR.ROLE_UUID: UUID(bytes=access.role_uuid).hex,
+            BU.USER_UUID: UUID(bytes=access.user.user_uuid).hex,
+            BR.ROLE_UUID: UUID(bytes=access.role.role_uuid).hex,
         }
 
         return SUCCESS(response)
@@ -475,13 +471,13 @@ class APIInstanceAccessCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def post(self, model_uuid, instance_uuid, access_id):
+    def post(self, model_uuid, model, instance_uuid, instance, access_uuid, me):
         return ERR_FORB()
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def put(self, model_uuid, instance_uuid, access_id):
+    def put(self, model_uuid, model, instance_uuid, instance, access_uuid, me):
         return ERR_FORB()
 
     @authenticated
@@ -489,9 +485,13 @@ class APIInstanceAccessCollection(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE, BR.ROLE_GRANT_ACCESS_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me, access_uuid):
         # get the access object
-        access = instance.granted_users.filter_by(
-            access_uuid=UUID(access_uuid).bytes
-        ).one_or_none()
+        
+        stmt = select(ORMAccessInstance).where(
+            ORMAccessInstance.access_uuid == UUID(access_uuid).bytes,
+            ORMAccessInstance.instance_id == instance.instance_id
+        )
+        
+        access = db.session.scalars(stmt).one_or_none()
 
         if access is None:
             return ERR_NOFO()
