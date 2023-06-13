@@ -485,12 +485,12 @@ class APIInstanceAccessCollection(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE, BR.ROLE_GRANT_ACCESS_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me, access_uuid):
         # get the access object
-        
+
         stmt = select(ORMAccessInstance).where(
             ORMAccessInstance.access_uuid == UUID(access_uuid).bytes,
             ORMAccessInstance.instance_id == instance.instance_id
         )
-        
+
         access = db.session.scalars(stmt).one_or_none()
 
         if access is None:
