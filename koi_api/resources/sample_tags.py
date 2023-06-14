@@ -152,7 +152,6 @@ class APISampleTag(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
     ):
 
         return ERR_FORB()
@@ -176,7 +175,7 @@ class APISampleTag(BaseResource):
         for tag_assoc in tags:
             db.session.delete(tag_assoc)
         for tag in instance.tags:
-            if tag.samples is None:
+            if len(tag.samples) == 0:
                 db.session.delete(tag)
 
         instance.instance_samples_last_modified = datetime.utcnow()
@@ -204,7 +203,7 @@ class APISampleTagCollection(BaseResource):
                 db.session.delete(t)
 
         for tag in instance.tags:
-            if tag.samples is None:
+            if len(tag.samples) == 0:
                 db.session.delete(tag)
 
         instance.instance_samples_last_modified = datetime.utcnow()
@@ -219,7 +218,6 @@ class APISampleTagCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @sample_access
-    @json_request
     def put(
         self,
         model_uuid,
@@ -229,7 +227,7 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()
 
@@ -246,7 +244,7 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()
 
@@ -263,6 +261,6 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()
