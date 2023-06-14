@@ -44,42 +44,190 @@ def test_create(auth_client: Tuple[FlaskClient, str]):
     assert ret.status_code == 200
     ret = ret.get_json()
     assert len(ret) == 10
-    
-def sample_filtering(client):
-    
 
-    model = pool.new_model()
-    model.code = Dummy()
-    model.finalized = True
+def test_sample_tags_forbidden(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
 
-    # create two instances and finalize
-    inst = model.new_instance()
-    inst.finalized = True
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+    sample = sample.get_json()
+
+    # post on a sample tag is forbidden
+    ret = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json={"tag": "test"},
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+    # put, post, and get on a specific sample tag are forbidden
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags/test",
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+    ret = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags/test",
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+    ret = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags/test",
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+
+def test_sample_tags(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+    sample = sample.get_json()
+
+    def get_tags():
+        ret = client.head(
+            f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+            headers=header,
+        )
+        assert ret.status_code == 200
+
+        ret = client.get(
+            f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+            headers=header,
+        )
+        assert ret.status_code == 200
+        return ret.get_json()
+
+    # get the tags
+    assert get_tags() == []
+
+    # add a tag
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json=[{"name": "test"}],
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # add multiple tags
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json=[{"name": "test2"}, {"name": "test3"}],
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # get the tags
+    assert get_tags() == [{"name": "test"}, {"name": "test2"}, {"name": "test3"}]
+
+    # delete a tag
+    ret = client.delete(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags/test2",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # get the tags
+    assert get_tags() == [{"name": "test"}, {"name": "test3"}]
+
+    # delete all tags
+    ret = client.delete(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # get the tags
+    assert get_tags() == []
+
+
+def test_sample_filtering(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    def add_sample(tags, finalize=False):
+        ret = client.post(
+            f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+            json={},
+            headers=header,
+        )
+        assert ret.status_code == 200
+        sample = ret.get_json()
+
+        if finalize:
+            ret = client.put(
+                f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+                headers=header,
+                json={"finalized": True},
+            )
+            assert ret.status_code == 200
+
+        tag_dict = [{"name": t} for t in tags]    
+        ret = client.put(
+            f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+            json=tag_dict,
+            headers=header,
+        )
+        assert ret.status_code == 200
 
     for _ in range(1):
-        new_sample = inst.new_sample()
-        new_sample.tags.add("A")
-        new_sample.finalized = True
+        add_sample(["A"])
 
     for _ in range(3):
-        new_sample = inst.new_sample()
-        new_sample.tags.add("A")
-        new_sample.tags.add("B")
-        new_sample.finalized = True
+        add_sample(["A", "B"], finalize=True)
 
     for _ in range(5):
-        new_sample = inst.new_sample()
-        new_sample.tags.add("B")
-        new_sample.finalized = True
+        add_sample(["B"])
 
-    all_a = inst.get_samples(filter_include=["A", ])
+    all_a = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample?inc_tags=A",
+        headers=header,
+    )
+    assert all_a.status_code == 200    
+    all_a = all_a.get_json()
     assert len(all_a) == 1+3
 
-    all_b = inst.get_samples(filter_include=["B", ])
+    all_b = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample?inc_tags=B",
+        headers=header,
+    )
+    assert all_b.status_code == 200
+    all_b = all_b.get_json()
     assert len(all_b) == 3+5
-
-    only_a = inst.get_samples(filter_include=["A", ], filter_exclude=["B", ])
+    
+    only_a = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample?inc_tags=A&exc_tags=B",
+        headers=header,
+    )
+    assert only_a.status_code == 200
+    only_a = only_a.get_json()
     assert len(only_a) == 1
 
-    only_b = inst.get_samples(filter_include=["B", ], filter_exclude=["A", ])
+    only_b = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample?inc_tags=B&exc_tags=A",
+        headers=header,
+    )
+    assert only_b.status_code == 200
+    only_b = only_b.get_json()
     assert len(only_b) == 5
