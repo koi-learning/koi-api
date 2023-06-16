@@ -518,6 +518,9 @@ class APISampleDataCollection(BaseResource):
         me,
         json_object,
     ):
+        if sample.sample_finalized:
+            return ERR_BADR("sample is finalized")
+
         if BS.SAMPLE_KEY in json_object:
             if data.data_key != json_object[BS.SAMPLE_KEY]:
                 data.data_key = json_object[BS.SAMPLE_KEY]
