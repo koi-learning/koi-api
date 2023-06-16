@@ -45,6 +45,48 @@ def test_create(auth_client: Tuple[FlaskClient, str]):
     ret = ret.get_json()
     assert len(ret) == 10
 
+
+def test_sample_forbidden(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    # put on sample is forbidden
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+    # delete on sample is forbidden
+    ret = client.delete(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+    # generate a sample
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+
+    sample = sample.get_json()
+
+    # post on specific sample is forbidden
+    ret = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert ret.status_code == 405
+
+
+
 def test_sample_tags_forbidden(auth_client: Tuple[FlaskClient, str]):
     client, header = auth_client
 
@@ -160,6 +202,111 @@ def test_sample_tags(auth_client: Tuple[FlaskClient, str]):
     assert get_tags() == []
 
 
+def test_head_sample(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+    sample = sample.get_json()
+
+    # head on sample
+    ret = client.head(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # finalize sample
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={"finalized": True},
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # head on finalized sample
+    ret = client.head(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    ret = client.head(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+
+def test_finalize_and_delete(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+
+    sample = sample.get_json()
+
+    # finalize sample, but fail
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={"finalized": "abc"},
+        headers=header,
+    )
+    assert ret.status_code == 400
+
+    # get the sample
+    ret = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 200
+    sample = ret.get_json()
+
+    # finalize sample
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={"finalized": True},
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # get the sample
+    ret = client.get(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # delete sample
+    ret = client.delete(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 200
+
+    # delete sample again
+    ret = client.delete(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        headers=header,
+    )
+    assert ret.status_code == 404
+
 def test_sample_filtering(auth_client: Tuple[FlaskClient, str]):
     client, header = auth_client
     model = make_empty_model(auth_client)
@@ -231,3 +378,114 @@ def test_sample_filtering(auth_client: Tuple[FlaskClient, str]):
     assert only_b.status_code == 200
     only_b = only_b.get_json()
     assert len(only_b) == 5
+
+
+
+def create_change_finalize_delete(auth_client: Tuple[FlaskClient, str], base_url, fails_on_finalized, key):
+    client, header = auth_client
+
+    # head
+    ret = client.head(base_url, headers=header)
+    assert ret.status_code == 200
+
+    # get all existing
+    ret = client.get(base_url, headers=header)
+    assert ret.status_code == 200
+
+    old_datas = ret.get_json()
+
+    # create new
+    ret = client.post(base_url, json={}, headers=header)
+    if fails_on_finalized:
+        assert ret.status_code == 400
+    else:
+        assert ret.status_code == 200
+    
+    # get all existing
+    ret = client.get(base_url, headers=header)
+    assert ret.status_code == 200
+    
+    new_datas = ret.get_json()
+
+    if not fails_on_finalized:
+        assert len(new_datas) == len(old_datas) + 1
+    else:
+        assert len(new_datas) == len(old_datas)
+    
+    # edit all existing
+    for idx, data in enumerate(new_datas):
+        ret = client.head(f"{base_url}/{data[key]}", headers=header)
+        assert ret.status_code == 200
+
+        ret = client.get(f"{base_url}/{data[key]}", headers=header)
+        assert ret.status_code == 200
+
+        ret = client.put(f"{base_url}/{data[key]}", json={"key":str(idx)}, headers=header)
+        if fails_on_finalized:
+            assert ret.status_code == 400
+        else:
+            assert ret.status_code == 200
+    
+    # delete all existing
+    for data in new_datas:
+        ret = client.delete(f"{base_url}/{data[key]}", headers=header)
+        if fails_on_finalized:
+            assert ret.status_code == 400
+        else:
+            assert ret.status_code == 200
+
+
+
+def test_data_label(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+
+    sample = sample.get_json()
+
+    urls= [
+        (f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/data", "data_uuid", True),
+        (f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/label", "label_uuid", False),
+    ]
+
+    for url, _, _ in urls:
+        # post new data/label
+        ret = client.post(
+            url,
+            json={"key": "preset"},
+            headers=header,
+        )
+        assert ret.status_code == 200
+
+    for url, key, _ in urls:
+        create_change_finalize_delete(auth_client, url, False, key)
+    
+    for url, _, _ in urls:
+        # post new data/label
+        ret = client.post(
+            url,
+            json={"key": "preset"},
+            headers=header,
+        )
+        assert ret.status_code == 200
+
+    # finalize
+    finalize = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={"finalized": True},
+        headers=header,
+    )
+    assert finalize.status_code == 200
+
+    for url, key, fails in urls:
+        create_change_finalize_delete(auth_client, url, fails, key)
+
