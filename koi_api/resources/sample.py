@@ -856,6 +856,8 @@ class APISampleDataFile(BaseResource):
         data,
         me,
     ):
+        if data.file is None:
+            return ERR_NOFO("no data specified")
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
@@ -885,19 +887,20 @@ class APISampleDataFile(BaseResource):
     ):
         if data.file is None:
             return ERR_NOFO("no data specified")
-        else:
-            data_raw = persistence.get_file(data.file)
-            data_raw = BytesIO(data_raw)
-            data_raw.seek(0)
-            valid = LT_SAMPLE
-            if sample.sample_finalized:
-                valid = LT_SAMPLE_FINALIZED
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=data.data_last_modified,
-                max_age=valid,
-            )
+
+        data_raw = persistence.get_file(data.file)
+        data_raw = BytesIO(data_raw)
+        data_raw.seek(0)
+        valid = LT_SAMPLE
+        if sample.sample_finalized:
+            valid = LT_SAMPLE_FINALIZED
+        return send_file(
+            data_raw,
+            mimetype="application/octet-stream",
+            last_modified=data.data_last_modified,
+            max_age=valid,
+            etag=data.data_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -992,6 +995,9 @@ class APISampleLabelFile(BaseResource):
         label,
         me,
     ):
+        if label.file is None:
+            return ERR_NOFO("no data specified")
+
         return SUCCESS(
             "",
             last_modified=label.label_last_modified,
@@ -1018,18 +1024,17 @@ class APISampleLabelFile(BaseResource):
     ):
         if label.file is None:
             return ERR_NOFO("no data specified")
-        else:
-            data_raw = persistence.get_file(label.file)
-            data_raw = BytesIO(data_raw)
-            data_raw.seek(0)
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=label.label_last_modified,
-                max_age=LT_SAMPLE,
-            )
 
-        return SUCCESS()
+        data_raw = persistence.get_file(label.file)
+        data_raw = BytesIO(data_raw)
+        data_raw.seek(0)
+        return send_file(
+            data_raw,
+            mimetype="application/octet-stream",
+            last_modified=label.label_last_modified,
+            max_age=LT_SAMPLE,
+            etag=label.label_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])

@@ -425,6 +425,9 @@ def create_change_finalize_delete(auth_client: Tuple[FlaskClient, str], base_url
             assert ret.status_code == 400
         else:
             assert ret.status_code == 200
+
+        ret = client.post(f"{base_url}/{data[key]}", json={"key":str(idx)}, headers=header)
+        assert ret.status_code == 405
     
     # delete all existing
     for data in new_datas:
@@ -466,6 +469,19 @@ def test_data_label(auth_client: Tuple[FlaskClient, str]):
         )
         assert ret.status_code == 200
 
+        ret = client.put(
+            url,
+            json={"key": "preset"},
+            headers=header,
+        )
+        assert ret.status_code == 405
+
+        ret = client.delete(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 405
+
     for url, key, _ in urls:
         create_change_finalize_delete(auth_client, url, False, key)
     
@@ -489,3 +505,122 @@ def test_data_label(auth_client: Tuple[FlaskClient, str]):
     for url, key, fails in urls:
         create_change_finalize_delete(auth_client, url, fails, key)
 
+
+def test_data_label_files(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+
+    model = make_empty_model(auth_client)
+    inst = make_empty_instance(auth_client, model["model_uuid"])
+    assert inst["instance_uuid"] is not None
+
+    sample = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample",
+        json={},  # empty sample
+        headers=header,
+    )
+    assert sample.status_code == 200
+
+    sample = sample.get_json()
+
+    # add one data and label entry
+    data = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/data",
+        json={"key": "preset"},
+        headers=header,
+    )
+    assert data.status_code == 200
+
+    label = client.post(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/label",
+        json={"key": "preset"},
+        headers=header,
+    )
+    assert label.status_code == 200
+
+    data = data.get_json()
+    label = label.get_json()
+
+    urls = [
+        (f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/data/{data['data_uuid']}/file", True),
+        (f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/label/{label['label_uuid']}/file", False),
+    ]
+
+    for url, _ in urls:
+        # head the file
+        ret = client.head(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 404
+
+        # get the file
+        ret = client.get(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 404
+
+        # post new file
+        ret = client.post(
+            url,
+            data=b"test",
+            headers=header,
+        )
+        assert ret.status_code == 200
+
+        # get the file
+        ret = client.get(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 200
+        assert ret.data == b"test"
+    
+    # finalize the sample
+    finalize = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}",
+        json={"finalized": True},
+        headers=header,
+    )
+    assert finalize.status_code == 200
+
+    for url, fails in urls:
+        # post new file
+        ret = client.post(
+            url,
+            data=b"test",
+            headers=header,
+        )
+        if fails:
+            assert ret.status_code == 400
+        else:
+            assert ret.status_code == 200
+
+        # head the file 
+        ret = client.head(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 200
+
+        # get the file
+        ret = client.get(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 200
+        assert ret.data == b"test"
+
+        # delet and put should be illegal
+        ret = client.delete(
+            url,
+            headers=header,
+        )
+        assert ret.status_code == 405
+
+        ret = client.put(
+            url,
+            data=b"test",
+            headers=header,
+        )
+        assert ret.status_code == 405
