@@ -78,7 +78,7 @@ class APIModel(BaseResource):
                 BM.MODEL_HAS_PLUGIN_VISUAL: model.visual_plugin is not None,
                 BM.MODEL_HAS_PLUGIN_LABEL: model.request_plugin is not None,
                 BM.MODEL_FINALIZED: model.model_finalized,
-                BM.MODEL_LAST_MODIFIED: model.model_last_modified,
+                BM.MODEL_LAST_MODIFIED: model.model_last_modified.isoformat(),
             }
             for model in models
         ]
@@ -179,7 +179,7 @@ class APIModelCollection(BaseResource):
             BM.MODEL_HAS_PLUGIN_VISUAL: model.visual_plugin is not None,
             BM.MODEL_HAS_PLUGIN_LABEL: model.request_plugin is not None,
             BM.MODEL_FINALIZED: model.model_finalized,
-            BM.MODEL_LAST_MODIFIED: model.model_last_modified,
+            BM.MODEL_LAST_MODIFIED: model.model_last_modified.isoformat(),
         }
 
         valid = LT_MODEL
