@@ -27,7 +27,7 @@ class ORMModel(db.Model):
     model_id = mapped_column(Integer, primary_key=True, unique=True)
     model_name = mapped_column(String(500))
     model_description = mapped_column(String(500))
-    model_uuid = mapped_column(LargeBinary(16), index=True)
+    model_uuid = mapped_column(LargeBinary(16))
     model_finalized = mapped_column(Boolean)
     model_last_modified = mapped_column(DateTime, nullable=False)
     model_instances_last_modified = mapped_column(DateTime, nullable=False)
