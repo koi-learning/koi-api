@@ -637,6 +637,8 @@ class APIInstanceInferenceData(BaseResource):
             data = request.data
             file_pers = persistence.store_file(data)
 
+            db.session.add(file_pers)
+
             # TODO: prevent existing inferencedata to become orphaned
             newRequest = ORMInstanceInferenceData()
             newRequest.file = file_pers
@@ -707,6 +709,9 @@ class APIInstanceTrainingData(BaseResource):
 
             data = request.data
             file_pers = persistence.store_file(data)
+
+            db.session.add(file_pers)
+
             new_uuid = uuid4()
 
             # TODO: prevent existing inferencedata to become orphaned
@@ -864,6 +869,8 @@ class APIInstanceMerge(BaseResource):
                 new_desc.descriptor_uuid = uuid4().bytes
 
                 file_pers = persistence.store_file(value)
+
+                db.session.add(file_pers)
 
                 new_desc.descriptor_file = file_pers
                 db.session.add(new_desc)

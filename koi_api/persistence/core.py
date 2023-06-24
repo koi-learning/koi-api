@@ -13,7 +13,6 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from koi_api.orm import db
 from koi_api.orm.file import ORMFile
 import gzip
 from uuid import uuid4
@@ -53,9 +52,6 @@ class PersistenceHandler:
         f = gzip.open(path, mode="wb", compresslevel=9)
         f.write(data)
         f.close()
-
-        db.session.add(newFile)
-        db.session.commit()
 
         return newFile
 

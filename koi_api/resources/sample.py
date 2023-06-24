@@ -925,6 +925,8 @@ class APISampleDataFile(BaseResource):
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
+        db.session.add(file_pers)
+
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         data.data_last_modified = datetime.utcnow()
@@ -933,7 +935,6 @@ class APISampleDataFile(BaseResource):
         instance.instance_samples_etag = token_hex(16)
 
         data.file = file_pers
-        db.session.add(file_pers)
         db.session.commit()
 
         return SUCCESS()
@@ -1056,6 +1057,8 @@ class APISampleLabelFile(BaseResource):
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
+        db.session.add(file_pers)
+
         label.file = file_pers
 
         sample.sample_last_modified = datetime.utcnow()
@@ -1065,7 +1068,6 @@ class APISampleLabelFile(BaseResource):
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        db.session.add(file_pers)
         db.session.commit()
 
         return SUCCESS()

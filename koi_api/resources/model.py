@@ -332,6 +332,7 @@ class APIModelCode(BaseResource):
                     db.session.add(new_param)
 
             # TODO: prevent existing code to become orphaned
+            db.session.add(file_pers)
             newCode = ORMModelCode()
             newCode.file = file_pers
             db.session.add(newCode)
@@ -379,6 +380,8 @@ class APIModelVisualPlugin(BaseResource):
         data = request.data
         file_pers = persistence.store_file(data)
 
+        db.session.add(file_pers)
+
         # TODO: prevent existing plugin to become orphaned
         newVisual = ORMModelVisualPlugin()
         newVisual.file = file_pers
@@ -424,6 +427,8 @@ class APIModelRequestPlugin(BaseResource):
 
         data = request.data
         file_pers = persistence.store_file(data)
+
+        db.session.add(file_pers)
 
         # TODO: prevent existing plugin to become orphaned
         newRequest = ORMModelLabelRequestPlugin()

@@ -153,6 +153,8 @@ class APILabelRequestCollection(BaseResource):
         label = request.data
         file_pers = persistence.store_file(label)
 
+        db.session.add(file_pers)
+
         new_uuid = uuid4()
 
         new_data = ORMSampleLabel()
