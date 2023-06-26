@@ -391,6 +391,7 @@ class APIInstance(BaseResource):
                     < instance.instance_samples_last_modified
                 ),
                 BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified.isoformat(),
+                BI.INSTANCE_SAMPLES_LAST_MODIFIED: instance.instance_samples_last_modified.isoformat(),
                 BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
             }
             for instance in instances
@@ -475,6 +476,7 @@ class APIInstance(BaseResource):
                     < new_inst.instance_samples_last_modified
                 ),
                 BI.INSTANCE_LAST_MODIFIED: new_inst.instance_last_modified.isoformat(),
+                BI.INSTANCE_SAMPLES_LAST_MODIFIED: new_inst.instance_samples_last_modified.isoformat(),
                 BI.INSTANCE_HAS_REQUESTS: new_inst.label_requests.filter_by(obsolete=False).count() > 0,
             },
             last_modified=new_inst.instance_last_modified,
@@ -527,6 +529,7 @@ class APIInstanceCollection(BaseResource):
                 < instance.instance_samples_last_modified
             ),
             BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified.isoformat(),
+            BI.INSTANCE_SAMPLES_LAST_MODIFIED: instance.instance_samples_last_modified.isoformat(),
             BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
         }
 
