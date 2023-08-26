@@ -10,4 +10,4 @@ RUN python -m pip install --upgrade pip
 RUN pip install --find-links=/wheels koi_api
 RUN pip install waitress
 
-ENTRYPOINT [ "waitress-serve", "--port=8080", "--call", "koi_api:create_app", "--max-request-body-size=8589934592" ]
+ENTRYPOINT [ "waitress-serve", "--port=8080", "--max-request-body-size=8589934592", "--call", "koi_api:create_app" ]
