@@ -2,13 +2,16 @@
 requires = ["setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["koi_api"]
+
 [project]
 name = "koi-api"
 version = "0.5.0"
 description = "Backend server for the KOI-System"
 license.file = "COPYING.LESSER"
 readme = "README.md"
-requires-python = ">=3.8,<3.11"
+requires-python = ">=3.8,<3.12"
 classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
 
 dependencies = [
