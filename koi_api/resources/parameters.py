@@ -25,14 +25,16 @@ from koi_api.resources.base import (
     json_request,
 )
 from koi_api.common.string_constants import BODY_ROLE as BR, BODY_PARAM as BP
-from koi_api.common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR
-from koi_api.orm.parameters import ORMInstanceParameter
+from koi_api.common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR, ERR_FATL
+from koi_api.orm.parameters import ORMInstanceParameter, ORMModelParameter
 
 
 class APIModelParameter(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me):
+        params = ORMModelParameter.query.filter_by(model_id=model.model_id).all()
+
         response = [
             {
                 BP.PARAM_UUID: UUID(bytes=param.param_uuid).hex,
@@ -41,7 +43,7 @@ class APIModelParameter(BaseResource):
                 BP.PARAM_CONSTRAINT: param.param_constraint,
                 BP.PARAM_TYPE: param.param_type,
             }
-            for param in model.params.all()
+            for param in params
         ]
         return SUCCESS(response)
 
@@ -65,7 +67,15 @@ class APIModelParameterCollection(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     def get(self, model_uuid, model, me, param_uuid):
-        param = model.params.filter_by(param_uuid=UUID(param_uuid).bytes).one_or_none()
+        try:
+            param_uuid = UUID(param_uuid)
+        except ValueError:
+            return ERR_BADR("misformed parameter uuid")
+
+        param = ORMModelParameter.query.filter_by(
+            model_id=model.model_id,
+            param_uuid=param_uuid.bytes
+        ).one_or_none()
         if param is None:
             return ERR_NOFO()
 
@@ -80,17 +90,17 @@ class APIModelParameterCollection(BaseResource):
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
-    def post(self, model_uuid, model, me):
+    def post(self, model_uuid, model, me, param_uuid):
         return ERR_FORB()
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
-    def put(self, model_uuid, model, me):
+    def put(self, model_uuid, model, me, param_uuid):
         return ERR_FORB()
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
-    def delete(self, model_uuid, model, me):
+    def delete(self, model_uuid, model, me, param_uuid):
         return ERR_FORB()
 
 
@@ -101,6 +111,9 @@ class APIInstanceParameter(BaseResource):
     def get(
         self, model_uuid, model: ORMModel, instance_uuid, instance: ORMInstance, me
     ):
+        params = ORMInstanceParameter.query.filter_by(
+            instance_id=instance.instance_id
+        ).all()
         response = [
             {
                 BP.PARAM_UUID_VALUE: UUID(bytes=param.param_uuid).hex,
@@ -111,7 +124,7 @@ class APIInstanceParameter(BaseResource):
                 BP.PARAM_CONSTRAINT: param.model_param.param_constraint,
                 BP.PARAM_TYPE: param.model_param.param_type,
             }
-            for param in instance.params.all()
+            for param in params
         ]
         return SUCCESS(response)
 
@@ -130,7 +143,7 @@ class APIInstanceParameter(BaseResource):
         else:
             return ERR_BADR("missing field: " + BP.PARAM_UUID)
 
-        model_param = model.params.filter_by(
+        model_param = ORMModelParameter.query.filter_by(
             param_uuid=model_param_uuid.bytes
         ).one_or_none()
 
@@ -139,12 +152,11 @@ class APIInstanceParameter(BaseResource):
 
         instance_param_value = ""
         if BP.PARAM_VALUE in json_object:
-            try:
-                instance_param_value = json_object[BP.PARAM_VALUE]
-            except ValueError:
-                return ERR_BADR()
-
-        instance_param = instance.params.filter_by(
+            instance_param_value = json_object[BP.PARAM_VALUE]
+            if not any([isinstance(instance_param_value, t) for t in [str, int, float]]):
+                return ERR_BADR("wrong field type: " + BP.PARAM_VALUE)
+            
+        instance_param = ORMInstanceParameter.query.filter_by(
             model_param_id=model_param.param_id
         ).one_or_none()
 
@@ -177,8 +189,15 @@ class APIInstanceParameterCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def get(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
-        param = instance.params.filter_by(
-            param_uuid=UUID(param_uuid).bytes
+        
+        try:
+            param_uuid = UUID(param_uuid)
+        except ValueError:
+            return ERR_BADR("misformed parameter uuid")
+
+        param = ORMInstanceParameter.query.filter_by(
+            instance_id=instance.instance_id,
+            param_uuid=param_uuid.bytes
         ).one_or_none()
 
         if param is None:
@@ -203,19 +222,24 @@ class APIInstanceParameterCollection(BaseResource):
     @json_request
     def put(
         self, model_uuid, model, instance_uuid, instance, me, param_uuid, json_object
-    ):
-        param = instance.params.filter_by(
-            param_uuid=UUID(param_uuid).bytes
+    ):  
+        try:
+            param_uuid = UUID(param_uuid)
+        except ValueError:
+            return ERR_BADR("misformed parameter uuid")
+
+        param = ORMInstanceParameter.query.filter_by(
+            instance_id=instance.instance_id,
+            param_uuid=param_uuid.bytes
         ).one_or_none()
 
         if param is None:
             return ERR_NOFO("parameter is unknown")
 
         if BP.PARAM_VALUE in json_object:
-            try:
-                param.param_value = json_object[BP.PARAM_VALUE]
-            except ValueError:
-                return ERR_BADR()
+            param.param_value = json_object[BP.PARAM_VALUE]
+            if not any([isinstance(param.param_value, t) for t in [str, int, float]]):
+                return ERR_BADR("wrong field type: " + BP.PARAM_VALUE)
 
         db.session.commit()
         return SUCCESS()
@@ -224,12 +248,19 @@ class APIInstanceParameterCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
-        param = instance.params.filter_by(
-            param_uuid=UUID(param_uuid).bytes
+        try:
+            param_uuid = UUID(param_uuid)
+        except ValueError:
+            return ERR_BADR("misformed parameter uuid")
+
+        param = ORMInstanceParameter.query.filter_by(
+            instance_id=instance.instance_id,
+            param_uuid=param_uuid.bytes
         ).one_or_none()
 
         if param is None:
             return ERR_NOFO("parameter is unknown")
 
         db.session.delete(param)
+        db.session.commit()
         return SUCCESS()
