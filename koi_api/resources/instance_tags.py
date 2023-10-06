@@ -31,7 +31,7 @@ class APIInstanceTag(BaseResource):
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
-    def head(self, model_uuid, model, instance_uuid, instance, sample_uuid, sample, me):
+    def head(self, model_uuid, model, instance_uuid, instance, me):
         return SUCCESS(
             "",
             last_modified=instance.instance_samples_last_modified,
@@ -71,7 +71,6 @@ class APIInstanceTag(BaseResource):
         instance_uuid,
         instance,
         me,
-        json_object,
     ):
         """
         """
@@ -87,7 +86,6 @@ class APIInstanceTag(BaseResource):
         instance_uuid,
         instance,
         me,
-        json_object,
     ):
         return ERR_FORB()
 
@@ -101,6 +99,5 @@ class APIInstanceTag(BaseResource):
         instance_uuid,
         instance,
         me,
-        json_object,
     ):
         return ERR_FORB()
