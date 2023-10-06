@@ -201,6 +201,34 @@ def test_sample_tags(auth_client: Tuple[FlaskClient, str]):
     # get the tags
     assert get_tags() == []
 
+    # add a misformed tag
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json=[{"name": 123}],
+        headers=header,
+    )
+    assert ret.status_code == 400
+
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json=[{"not_name": "test"},],
+        headers=header,
+    )
+    assert ret.status_code == 400
+
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json={"name": "test"},
+        headers=header,
+    )
+    assert ret.status_code == 400
+
+    ret = client.put(
+        f"/api/model/{model['model_uuid']}/instance/{inst['instance_uuid']}/sample/{sample['sample_uuid']}/tags",
+        json=["test", ],
+        headers=header,
+    )
+    assert ret.status_code == 400
 
 def test_head_sample(auth_client: Tuple[FlaskClient, str]):
     client, header = auth_client
