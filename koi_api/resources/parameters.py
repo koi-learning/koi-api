@@ -25,7 +25,7 @@ from koi_api.resources.base import (
     json_request,
 )
 from koi_api.common.string_constants import BODY_ROLE as BR, BODY_PARAM as BP
-from koi_api.common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR, ERR_FATL
+from koi_api.common.return_codes import SUCCESS, ERR_FORB, ERR_NOFO, ERR_BADR
 from koi_api.orm.parameters import ORMInstanceParameter, ORMModelParameter
 
 
@@ -155,7 +155,7 @@ class APIInstanceParameter(BaseResource):
             instance_param_value = json_object[BP.PARAM_VALUE]
             if not any([isinstance(instance_param_value, t) for t in [str, int, float]]):
                 return ERR_BADR("wrong field type: " + BP.PARAM_VALUE)
-            
+
         instance_param = ORMInstanceParameter.query.filter_by(
             model_param_id=model_param.param_id
         ).one_or_none()
@@ -189,7 +189,7 @@ class APIInstanceParameterCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def get(self, model_uuid, model, instance_uuid, instance, me, param_uuid):
-        
+
         try:
             param_uuid = UUID(param_uuid)
         except ValueError:
@@ -222,7 +222,7 @@ class APIInstanceParameterCollection(BaseResource):
     @json_request
     def put(
         self, model_uuid, model, instance_uuid, instance, me, param_uuid, json_object
-    ):  
+    ):
         try:
             param_uuid = UUID(param_uuid)
         except ValueError:

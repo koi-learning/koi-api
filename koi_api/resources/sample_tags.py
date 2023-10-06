@@ -87,7 +87,7 @@ class APISampleTag(BaseResource):
 
         # go through all tags in the json_list
         for tag in json_object:
-            #check that the tag is a dict with teh valid format
+            # check that the tag is a dict with teh valid format
             if not isinstance(tag, dict):
                 return ERR_BADR("Expected a tag to be a dict")
             if BT.TAG_NAME not in tag.keys():
