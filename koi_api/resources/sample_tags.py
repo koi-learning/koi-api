@@ -24,7 +24,7 @@ from koi_api.resources.base import (
 )
 from koi_api.resources.base import sample_access, json_request
 from koi_api.orm.sample import ORMAssociationTags, ORMSampleTag
-from koi_api.common.return_codes import ERR_FORB, SUCCESS
+from koi_api.common.return_codes import ERR_FORB, SUCCESS, ERR_BADR
 from koi_api.common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
 from koi_api.resources.lifetime import LT_COLLECTION
 
@@ -81,8 +81,19 @@ class APISampleTag(BaseResource):
         """
         """
         changed = False
+
+        if not isinstance(json_object, list):
+            return ERR_BADR("Expected a list of tags")
+
         # go through all tags in the json_list
         for tag in json_object:
+            #check that the tag is a dict with teh valid format
+            if not isinstance(tag, dict):
+                return ERR_BADR("Expected a tag to be a dict")
+            if BT.TAG_NAME not in tag.keys():
+                return ERR_BADR("Expected a tag to have a 'name' key")
+            if not isinstance(tag[BT.TAG_NAME], str):
+                return ERR_BADR("Expected a tag name to be a string")
 
             # get all tags currently registered
             all_tags = {t.tag_name: t for t in instance.tags}
