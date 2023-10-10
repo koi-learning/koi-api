@@ -16,7 +16,6 @@
 from secrets import token_hex
 from flask_restful import request
 from flask import send_file
-from sqlalchemy import select
 from io import BytesIO
 from datetime import datetime
 from koi_api.orm import db
@@ -81,11 +80,11 @@ class APISample(BaseResource):
         Returns:
             [list of object with uuid field]: list of all samples assigned to this instance
         """
-        stmt_sample = select(ORMSample).where(ORMSample.instance_id == instance.instance_id)
+        stmt_sample = instance.samples
 
         if len(filter_include) > 0:
             # filter includes
-            stmt_sample = stmt_sample.where(
+            stmt_sample = stmt_sample.filter(
                 ORMSample.tags.any(
                     ORMSampleTag.tag_name.in_(filter_include),
                     sample_id=ORMSample.sample_id,
@@ -95,7 +94,7 @@ class APISample(BaseResource):
 
         if len(filter_exclude) > 0:
             # filter excludes
-            stmt_sample = stmt_sample.where(
+            stmt_sample = stmt_sample.filter(
                 ~ORMSample.tags.any(
                     ORMSampleTag.tag_name.in_(filter_exclude),
                     sample_id=ORMSample.sample_id,
@@ -105,7 +104,7 @@ class APISample(BaseResource):
 
         # paging
         stmt_sample = stmt_sample.offset(page_offset).limit(page_limit)
-        samples = db.session.scalars(stmt_sample).all()
+        samples = stmt_sample.all()
 
         response = [
             {

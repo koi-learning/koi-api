@@ -15,6 +15,7 @@
 
 from flask_restful import request
 from uuid import uuid4, UUID
+from datetime import datetime
 from koi_api.resources.base import BaseResource, authenticated, paged
 from koi_api.resources.base import instance_access, json_request, model_access, label_request_filter
 from koi_api.orm import db
@@ -47,9 +48,7 @@ class APILabelRequest(BaseResource):
             label_requests = label_requests.filter_by(
                 obsolete=min(1, max(0, filter_obsolete))
             )
-        label_requests.offset(page_offset).limit(
-            page_limit
-        )
+        label_requests.offset(page_offset).limit(page_limit)
         label_requests = label_requests.all()
 
         response = [
@@ -74,22 +73,32 @@ class APILabelRequest(BaseResource):
         new_request = ORMLabelRequest()
         new_request.label_request_uuid = new_uuid.bytes
         new_request.obsolete = 0
-        new_request.label_request_instance = instance
+        new_request.label_request_instance_id = instance.instance_id
 
         if BS.SAMPLE_UUID in json_object:
-            sample = instance.samples.filter_by(
-                sample_uuid=UUID(json_object[BS.SAMPLE_UUID]).bytes
-            ).one_or_none()
+            try:
+                s_uuid = UUID(json_object[BS.SAMPLE_UUID])
+            except ValueError:
+                return ERR_BADR("sample_uuid malformed")
+            sample = instance.samples.filter_by(sample_uuid=s_uuid.bytes).one_or_none()
             if sample is None:
-                ERR_NOFO("unknown sample")
+                return ERR_NOFO("unknown sample")
             else:
-                new_request.label_request_sample = sample
+                new_request.label_request_sample_id = sample.sample_id
         else:
             return ERR_BADR("missing field: " + BS.SAMPLE_UUID)
 
         db.session.add(new_request)
         db.session.commit()
-        return SUCCESS()
+
+        response = {
+            BS.SAMPLE_LABEL_REQUEST_UUID: UUID(bytes=new_request.label_request_uuid).hex,
+            BS.SAMPLE_UUID: UUID(bytes=new_request.sample.sample_uuid).hex,
+            BI.INSTANCE_UUID: UUID(bytes=new_request.instance.instance_uuid).hex,
+            BS.SAMPLE_OBSOLETE: new_request.obsolete,
+        }
+
+        return SUCCESS(response)
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -120,9 +129,13 @@ class APILabelRequestCollection(BaseResource):
         page_limit,
         request_uuid,
     ):
+        try:
+            request_uuid = UUID(request_uuid)
+        except ValueError:
+            return ERR_BADR("malformed uuid")
 
         label_request = instance.label_requests.filter_by(
-            label_request_uuid=UUID(request_uuid).bytes
+            label_request_uuid=request_uuid.bytes
         )
         label_request = label_request.one_or_none()
 
@@ -142,8 +155,13 @@ class APILabelRequestCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE, BR.ROLE_RESPONSE_LABEL])
     def post(self, model_uuid, model, instance_uuid, instance, me, request_uuid):
+        try:
+            request_uuid = UUID(request_uuid)
+        except ValueError:
+            return ERR_BADR("malformed uuid")
+
         label_request = instance.label_requests.filter_by(
-            label_request_uuid=UUID(request_uuid).bytes
+            label_request_uuid=request_uuid.bytes
         )
         label_request = label_request.join(ORMSample).one_or_none()
 
@@ -159,7 +177,8 @@ class APILabelRequestCollection(BaseResource):
 
         new_data = ORMSampleLabel()
         new_data.file = file_pers
-        new_data.sample = label_request
+        new_data.label_last_modified = datetime.utcnow()
+        new_data.sample_id = label_request.sample.sample_id
         new_data.label_uuid = new_uuid.bytes
 
         db.session.add(new_data)
@@ -175,8 +194,12 @@ class APILabelRequestCollection(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
     def put(self, model_uuid, model, instance_uuid, instance, me, request_uuid, json_object):
+        try:
+            request_uuid = UUID(request_uuid)
+        except ValueError:
+            return ERR_BADR("malformed uuid")
         label_request = instance.label_requests.filter_by(
-            label_request_uuid=UUID(request_uuid).bytes
+            label_request_uuid=request_uuid.bytes
         )
         label_request = label_request.one_or_none()
 
@@ -184,10 +207,12 @@ class APILabelRequestCollection(BaseResource):
             return ERR_NOFO("unknown feature request")
         if BS.SAMPLE_OBSOLETE in json_object:
             try:
-                label_request.obsolete = min(1, max(0, int(json_object[BS.SAMPLE_OBSOLETE])))
-                label_request.sample.consumed = False
+                value = int(json_object[BS.SAMPLE_OBSOLETE])
             except ValueError:
                 return ERR_BADR("malformed field")
+
+            label_request.obsolete = min(1, max(0, value))
+            label_request.sample.consumed = False
 
         db.session.commit()
         return SUCCESS()
@@ -196,13 +221,18 @@ class APILabelRequestCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     def delete(self, model_uuid, model, instance_uuid, instance, me, request_uuid):
+        try:
+            request_uuid = UUID(request_uuid)
+        except ValueError:
+            return ERR_BADR("malformed uuid")
         label_request = instance.label_requests.filter_by(
-            label_request_uuid=UUID(request_uuid).bytes
+            label_request_uuid=request_uuid.bytes
         ).one_or_none()
 
         if label_request is None:
             return ERR_NOFO("unknown feature request")
 
         db.session.delete(label_request)
+        db.session.commit()
 
         return SUCCESS()
