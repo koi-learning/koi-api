@@ -13,24 +13,29 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-# lifetime of a general collection of objects
-LT_COLLECTION = 0
+from flask.testing import FlaskClient
+from typing import Tuple
 
-# life time of model objects
-LT_MODEL = 1
-LT_MODEL_FINALIZED = 5
 
-# lifetime of instance objects
-LT_INSTANCE = 1
-LT_INSTANCE_FINALIZED = 5
-LT_INSTANCE_DESCRIPTOR = 1
+def test_get(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.get("/health")
+    assert ret.status_code == 200
 
-# lifetime of sample objects
-LT_SAMPLE = 1
-LT_SAMPLE_FINALIZED = 3
 
-# lifetime of inference data
-LT_INFERENCE_DATA = 5
+def test_post(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.post("/health")
+    assert ret.status_code == 405
 
-# lifetime of session token
-LT_SESSION_TOKEN = 3600
+
+def test_put(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.put("/health")
+    assert ret.status_code == 405
+
+
+def test_delete(auth_client: Tuple[FlaskClient, dict]):
+    client, _ = auth_client
+    ret = client.delete("/health")
+    assert ret.status_code == 405

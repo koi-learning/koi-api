@@ -131,3 +131,5 @@ koi_api/test.db
 temp/*.dat
 .vscode/settings.json
 .vscode/launch.json
+
+coverage.lcov

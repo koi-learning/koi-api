@@ -13,53 +13,54 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy import Integer, String, LargeBinary, ForeignKey, DateTime, Boolean
 from koi_api.orm import db
 
 
 class ORMAssociationTags(db.Model):
     __tablename__ = "tags_association"
-    assoc_id = db.Column(db.Integer, primary_key=True)
-    tag_id = db.Column(db.Integer, db.ForeignKey("sample_tag.tag_id"))
-    sample_id = db.Column(db.Integer, db.ForeignKey("sample.sample_id"))
-    mergeable = db.Column(db.Boolean)
+    assoc_id = mapped_column(Integer, primary_key=True)
+    tag_id = mapped_column(Integer, ForeignKey("sample_tag.tag_id"))
+    sample_id = mapped_column(Integer, ForeignKey("sample.sample_id"))
+    mergeable = mapped_column(Boolean)
 
-    sample = db.relationship("ORMSample", back_populates="tags")
-    tag = db.relationship("ORMSampleTag", back_populates="samples")
+    sample = relationship("ORMSample", back_populates="tags")
+    tag = relationship("ORMSampleTag", back_populates="samples")
 
 
 class ORMSample(db.Model):
     __tablename__ = "sample"
-    __table_args__ = (
-        db.Index("idx_sample_sample_uuid", "sample_uuid", mysql_length=16),
-    )
-    sample_id = db.Column(db.Integer, primary_key=True, unique=True)
-    sample_uuid = db.Column(db.LargeBinary(16))
-    sample_finalized = db.Column(db.Boolean)
+    # __table_args__ = (Index("idx_sample_sample_uuid", "sample_uuid", mysql_length=16))
 
-    sample_last_modified = db.Column(db.DateTime, nullable=False)
-    sample_etag = db.Column(db.String(50))
+    sample_id = mapped_column(Integer, primary_key=True, unique=True)
+    sample_uuid = mapped_column(LargeBinary(16))
+    sample_finalized = mapped_column(Boolean)
 
-    data = db.relationship(
+    sample_last_modified = mapped_column(DateTime, nullable=False)
+    sample_etag = mapped_column(String(50))
+
+    data = relationship(
         "ORMSampleData",
         back_populates="sample",
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
-    label = db.relationship(
+    label = relationship(
         "ORMSampleLabel",
         back_populates="sample",
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
 
-    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
-    instance = db.relationship("ORMInstance", back_populates="samples")
+    instance_id = mapped_column(Integer, ForeignKey("instance.instance_id"))
+    instance = relationship("ORMInstance", back_populates="samples")
 
-    label_requests = db.relationship(
+    label_requests = relationship(
         "ORMLabelRequest", back_populates="sample", lazy="dynamic"
     )
 
-    tags = db.relationship("ORMAssociationTags", back_populates="sample", lazy="dynamic")
+    tags = relationship("ORMAssociationTags", back_populates="sample", lazy="dynamic")
 
     def purge_for_merge(self):
         # collect all labels that will be lost ofter merging
@@ -82,51 +83,50 @@ class ORMSample(db.Model):
 
 class ORMSampleData(db.Model):
     __tablename__ = "sampledata"
-    __table_args__ = (
-        db.Index("idx_sampledata_data_uuid", "data_uuid", mysql_length=16),
-    )
-    data_id = db.Column(db.Integer, primary_key=True, unique=True)
-    data_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_sampledata_data_uuid", "data_uuid", mysql_length=16))
 
-    data_last_modified = db.Column(db.DateTime, nullable=False)
-    data_etag = db.Column(db.String(50))
+    data_id = mapped_column(Integer, primary_key=True, unique=True)
+    data_uuid = mapped_column(LargeBinary(16))
 
-    data_key = db.Column(db.String(500))
+    data_last_modified = mapped_column(DateTime, nullable=False)
+    data_etag = mapped_column(String(50))
 
-    sample_id = db.Column(db.Integer, db.ForeignKey("sample.sample_id"))
-    sample = db.relationship("ORMSample", back_populates="data")
+    data_key = mapped_column(String(500))
 
-    file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
-    file = db.relationship("ORMFile", cascade="all, delete")
+    sample_id = mapped_column(Integer, ForeignKey("sample.sample_id"))
+    sample = relationship("ORMSample", back_populates="data")
+
+    file_id = mapped_column(Integer, ForeignKey("file.file_id"))
+    file = relationship("ORMFile", cascade="all, delete")
 
 
 class ORMSampleLabel(db.Model):
     __tablename__ = "label"
-    __table_args__ = (db.Index("idx_label_label_uuid", "label_uuid", mysql_length=16),)
-    label_id = db.Column(db.Integer, primary_key=True, unique=True)
-    label_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_label_label_uuid", "label_uuid", mysql_length=16),)
+    label_id = mapped_column(Integer, primary_key=True, unique=True)
+    label_uuid = mapped_column(LargeBinary(16))
 
-    label_last_modified = db.Column(db.DateTime, nullable=False)
-    label_etag = db.Column(db.String(50))
+    label_last_modified = mapped_column(DateTime, nullable=False)
+    label_etag = mapped_column(String(50))
 
-    label_key = db.Column(db.String(500))
+    label_key = mapped_column(String(500))
 
-    sample_id = db.Column(db.Integer, db.ForeignKey("sample.sample_id"))
-    sample = db.relationship("ORMSample", back_populates="label")
+    sample_id = mapped_column(Integer, ForeignKey("sample.sample_id"))
+    sample = relationship("ORMSample", back_populates="label")
 
-    file_id = db.Column(db.Integer, db.ForeignKey("file.file_id"))
-    file = db.relationship("ORMFile", cascade="all, delete")
+    file_id = mapped_column(Integer, ForeignKey("file.file_id"))
+    file = relationship("ORMFile", cascade="all, delete")
 
-    mergeable = db.Column(db.Boolean)
+    mergeable = mapped_column(Boolean)
 
 
 class ORMSampleTag(db.Model):
     __tablename__ = "sample_tag"
 
-    tag_id = db.Column(db.Integer, primary_key=True, unique=True)
-    tag_name = db.Column(db.String(500))
+    tag_id = mapped_column(Integer, primary_key=True, unique=True)
+    tag_name = mapped_column(String(500))
 
-    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
-    instance = db.relationship("ORMInstance", back_populates="tags")
+    instance_id = mapped_column(Integer, ForeignKey("instance.instance_id"))
+    instance = relationship("ORMInstance", back_populates="tags")
 
-    samples = db.relationship("ORMAssociationTags", back_populates="tag")
+    samples = relationship("ORMAssociationTags", back_populates="tag")

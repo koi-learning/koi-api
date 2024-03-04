@@ -25,3 +25,12 @@
 - updated the Dockerfile and added automatic releases for docker images.
 ### 0.4.6
 - reworked the requirement management for linting und test
+## 0.5
+- updated dependencies too use sqlalchemy2
+- reworked test fixtures and removed xprocess
+- use sqlite in memory if nothing is configured
+- replaced usage of uuid4 with uuid1
+- adding files is now handled by the caller not the persistence abstraction
+- cleaned up how dates are formatted troughout the API. now everything is a iso string and not any date time objects with implicit cast.
+- do not start the process if the database connection could not be established. This helps when orchestrating docker setups with compose.
+- increased the default body request body size of waitress to 8gigs

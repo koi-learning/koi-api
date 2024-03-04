@@ -13,47 +13,49 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy import Integer, LargeBinary, ForeignKey
 from koi_api.orm import db
 
 
 class ORMAccessGeneral(db.Model):
     __tablename__ = "accessgeneral"
-    __table_args__ = (db.Index("idx_accessgeneral_access_uuid", "access_uuid", mysql_length=16),)
-    acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_accessgeneral_access_uuid", "access_uuid", mysql_length=16),)
+    acess_id = mapped_column(Integer, primary_key=True, unique=True)
+    access_uuid = mapped_column(LargeBinary(16))
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"))
-    user = db.relationship("ORMUser", back_populates="access_rights")
+    user_id = mapped_column(Integer, ForeignKey("user.user_id"))
+    user = relationship("ORMUser", back_populates="access_rights")
 
-    role_id = db.Column(db.Integer, db.ForeignKey("userrolegeneral.role_id"))
-    role = db.relationship("ORMUserRoleGeneral")
+    role_id = mapped_column(Integer, ForeignKey("userrolegeneral.role_id"))
+    role = relationship("ORMUserRoleGeneral")
 
 
 class ORMAccessInstance(db.Model):
     __tablename__ = "accessinstance"
-    __table_args__ = (db.Index("idx_accessinstance_access_uuid", "access_uuid", mysql_length=16),)
-    acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.LargeBinary(16))
-    instance_id = db.Column(db.Integer, db.ForeignKey("instance.instance_id"))
-    instance = db.relationship("ORMInstance", back_populates="granted_users")
+    # __table_args__ = (Index("idx_accessinstance_access_uuid", "access_uuid", mysql_length=16),)
+    acess_id = mapped_column(Integer, primary_key=True, unique=True)
+    access_uuid = mapped_column(LargeBinary(16))
+    instance_id = mapped_column(Integer, ForeignKey("instance.instance_id"))
+    instance = relationship("ORMInstance", back_populates="granted_users")
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"))
-    user = db.relationship("ORMUser", back_populates="access_rights_instances")
+    user_id = mapped_column(Integer, ForeignKey("user.user_id"))
+    user = relationship("ORMUser", back_populates="access_rights_instances")
 
-    role_id = db.Column(db.Integer, db.ForeignKey("userroleinstance.role_id"))
-    role = db.relationship("ORMUserRoleInstance")
+    role_id = mapped_column(Integer, ForeignKey("userroleinstance.role_id"))
+    role = relationship("ORMUserRoleInstance")
 
 
 class ORMAccessModel(db.Model):
     __tablename__ = "accessmodel"
-    __table_args__ = (db.Index("idx_accessmodel_access_uuid", "access_uuid", mysql_length=16),)
-    acess_id = db.Column(db.Integer, primary_key=True, unique=True)
-    access_uuid = db.Column(db.LargeBinary(16))
-    model_id = db.Column(db.Integer, db.ForeignKey("model.model_id"))
-    model = db.relationship("ORMModel", back_populates="granted_users")
+    # __table_args__ = (Index("idx_accessmodel_access_uuid", "access_uuid", mysql_length=16),)
+    acess_id = mapped_column(Integer, primary_key=True, unique=True)
+    access_uuid = mapped_column(LargeBinary(16))
+    model_id = mapped_column(Integer, ForeignKey("model.model_id"))
+    model = relationship("ORMModel", back_populates="granted_users")
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"))
-    user = db.relationship("ORMUser", back_populates="access_rights_models")
+    user_id = mapped_column(Integer, ForeignKey("user.user_id"))
+    user = relationship("ORMUser", back_populates="access_rights_models")
 
-    role_id = db.Column(db.Integer, db.ForeignKey("userrolemodel.role_id"))
-    role = db.relationship("ORMUserRoleModel")
+    role_id = mapped_column(Integer, ForeignKey("userrolemodel.role_id"))
+    role = relationship("ORMUserRoleModel")

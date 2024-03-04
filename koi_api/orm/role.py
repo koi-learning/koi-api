@@ -14,26 +14,29 @@
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
 from koi_api.common.string_constants import BODY_ROLE as BR
+from sqlalchemy.orm import mapped_column
+from sqlalchemy import Integer, String, LargeBinary, Boolean
 from koi_api.orm import db
 
 
 class ORMUserRoleGeneral(db.Model):
     __tablename__ = "userrolegeneral"
-    __table_args__ = (db.Index("idx_userrolegeneral_role_uuid", "role_uuid", mysql_length=16),)
-    role_id = db.Column(db.Integer, primary_key=True, unique=True)
-    role_name = db.Column(db.String(500))
-    role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_userrolegeneral_role_uuid", "role_uuid", mysql_length=16),)
 
-    grant_access = db.Column(db.Boolean)
+    role_id = mapped_column(Integer, primary_key=True, unique=True)
+    role_name = mapped_column(String(500))
+    role_description = mapped_column(String(500))
+    role_uuid = mapped_column(LargeBinary(16))
 
-    edit_users = db.Column(db.Boolean)
+    grant_access = mapped_column(Boolean)
 
-    edit_models = db.Column(db.Boolean)
+    edit_users = mapped_column(Boolean)
 
-    edit_roles = db.Column(db.Boolean)
+    edit_models = mapped_column(Boolean)
 
-    is_essential = db.Column(db.Boolean)
+    edit_roles = mapped_column(Boolean)
+
+    is_essential = mapped_column(Boolean)
 
     def check_right(self, right):
         mapping = {
@@ -51,26 +54,27 @@ class ORMUserRoleGeneral(db.Model):
 
 class ORMUserRoleInstance(db.Model):
     __tablename__ = "userroleinstance"
-    __table_args__ = (db.Index("idx_userroleinstance_role_uuid", "role_uuid", mysql_length=16),)
-    role_id = db.Column(db.Integer, primary_key=True, unique=True)
-    role_name = db.Column(db.String(500))
-    role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_userroleinstance_role_uuid", "role_uuid", mysql_length=16))
 
-    can_see = db.Column(db.Boolean)
-    add_sample = db.Column(db.Boolean)
+    role_id = mapped_column(Integer, primary_key=True, unique=True)
+    role_name = mapped_column(String(500))
+    role_description = mapped_column(String(500))
+    role_uuid = mapped_column(LargeBinary(16))
 
-    get_training_data = db.Column(db.Boolean)
-    get_inference_data = db.Column(db.Boolean)
+    can_see = mapped_column(Boolean)
+    add_sample = mapped_column(Boolean)
 
-    grant_access = db.Column(db.Boolean)
+    get_training_data = mapped_column(Boolean)
+    get_inference_data = mapped_column(Boolean)
 
-    edit = db.Column(db.Boolean)
+    grant_access = mapped_column(Boolean)
 
-    request_label = db.Column(db.Boolean)
-    response_label = db.Column(db.Boolean)
+    edit = mapped_column(Boolean)
 
-    is_essential = db.Column(db.Boolean)
+    request_label = mapped_column(Boolean)
+    response_label = mapped_column(Boolean)
+
+    is_essential = mapped_column(Boolean)
 
     def check_right(self, right):
         mapping = {
@@ -92,19 +96,20 @@ class ORMUserRoleInstance(db.Model):
 
 class ORMUserRoleModel(db.Model):
     __tablename__ = "userrolemodel"
-    __table_args__ = (db.Index("idx_userrolemodel_role_uuid", "role_uuid", mysql_length=16),)
-    role_id = db.Column(db.Integer, primary_key=True, unique=True)
-    role_name = db.Column(db.String(500))
-    role_description = db.Column(db.String(500))
-    role_uuid = db.Column(db.LargeBinary(16))
+    # __table_args__ = (Index("idx_userrolemodel_role_uuid", "role_uuid", mysql_length=16))
 
-    can_see = db.Column(db.Boolean)
-    instantiate = db.Column(db.Boolean)
-    edit = db.Column(db.Boolean)
-    download_code = db.Column(db.Boolean)
-    grant_access = db.Column(db.Boolean)
+    role_id = mapped_column(Integer, primary_key=True, unique=True)
+    role_name = mapped_column(String(500))
+    role_description = mapped_column(String(500))
+    role_uuid = mapped_column(LargeBinary(16))
 
-    is_essential = db.Column(db.Boolean)
+    can_see = mapped_column(Boolean)
+    instantiate = mapped_column(Boolean)
+    edit = mapped_column(Boolean)
+    download_code = mapped_column(Boolean)
+    grant_access = mapped_column(Boolean)
+
+    is_essential = mapped_column(Boolean)
 
     def check_right(self, right):
         mapping = {

@@ -20,7 +20,7 @@ from koi_api.orm.model import ORMModel
 from flask_restful import request
 from flask import send_file
 from io import BytesIO
-from uuid import uuid1, UUID
+from uuid import uuid4, UUID
 from secrets import token_hex
 from datetime import datetime
 from koi_api.resources.base import (
@@ -87,9 +87,9 @@ class APIInstanceDescriptor(BaseResource):
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @json_request
     def post(self, model, model_uuid, me, instance, instance_uuid, json_object):
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_desc = ORMInstanceDescriptor()
-        new_desc.descriptor_instance_id = instance.instance_id
+        new_desc.instance = instance
         new_desc.descriptor_uuid = new_uuid.bytes
 
         # check if the request is complete
@@ -120,13 +120,15 @@ class APIInstanceDescriptor(BaseResource):
         )
 
     @authenticated
-    @model_access([BR.ROLE_SEE_INSTANCE])
-    def put(self, model_uuid, model, me):
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    def put(self, model, model_uuid, me, instance, instance_uuid):
         return ERR_FORB()
 
     @authenticated
-    @model_access([BR.ROLE_SEE_INSTANCE])
-    def delete(self, model_uuid, model, me):
+    @model_access([BR.ROLE_SEE_MODEL])
+    @instance_access([BR.ROLE_SEE_INSTANCE])
+    def delete(self, model, model_uuid, me, instance, instance_uuid):
         return ERR_FORB()
 
 
@@ -275,8 +277,8 @@ class APIInstanceDescriptorFile(BaseResource):
                     data_raw,
                     mimetype="application/octet-stream",
                     last_modified=instance.instance_last_modified,
-                    cache_timeout=LT_INSTANCE_DESCRIPTOR,
-                    add_etags=False,
+                    max_age=LT_INSTANCE_DESCRIPTOR,
+                    etag=False,
                 )
             )
             response.set_etag(instance.instance_etag)
@@ -300,12 +302,12 @@ class APIInstanceDescriptorFile(BaseResource):
         # TODO: delete old descriptor file if already set
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
+        descriptor.file = file_pers
+        db.session.add(file_pers)
 
-        descriptor.descriptor_file_id = file_pers.file_id
         instance.instance_last_modified = datetime.utcnow()
         instance.instance_etag = token_hex(16)
 
-        db.session.add(file_pers)
         db.session.commit()
 
         return SUCCESS(
@@ -388,7 +390,8 @@ class APIInstance(BaseResource):
                     instance.instance_last_modified
                     < instance.instance_samples_last_modified
                 ),
-                BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
+                BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified.isoformat(),
+                BI.INSTANCE_SAMPLES_LAST_MODIFIED: instance.instance_samples_last_modified.isoformat(),
                 BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
             }
             for instance in instances
@@ -412,10 +415,10 @@ class APIInstance(BaseResource):
         if not model.model_finalized:
             return ERR_BADR("model not finalized")
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_inst = ORMInstance()
         new_inst.instance_uuid = new_uuid.bytes
-        new_inst.model_id = model.model_id
+        new_inst.model = model
         new_inst.instance_finalized = False
         new_inst.instance_last_modified = datetime.utcnow()
         new_inst.instance_etag = token_hex(16)
@@ -441,23 +444,20 @@ class APIInstance(BaseResource):
 
         for p in model.params:
             instance_parameter = ORMInstanceParameter()
-            instance_parameter.param_uuid = uuid1().bytes
-            instance_parameter.instance_id = new_inst.instance_id
-            instance_parameter.model_param_id = p.param_id
+            instance_parameter.param_uuid = uuid4().bytes
+            instance_parameter.instance = new_inst
+            instance_parameter.model_param = p
             instance_parameter.param_value = None
             db.session.add(instance_parameter)
-
-        # add the new instance
-        db.session.commit()
 
         owner_role = ORMUserRoleInstance.query.first()
 
         # construct the access object
         access = ORMAccessInstance()
-        access.role_id = owner_role.role_id
-        access.user_id = me.user_id
-        access.instance_id = new_inst.instance_id
-        access.access_uuid = uuid1().bytes
+        access.role = owner_role
+        access.user = me
+        access.instance = new_inst
+        access.access_uuid = uuid4().bytes
 
         db.session.add(access)
         db.session.commit()
@@ -475,6 +475,9 @@ class APIInstance(BaseResource):
                     new_inst.instance_last_modified
                     < new_inst.instance_samples_last_modified
                 ),
+                BI.INSTANCE_LAST_MODIFIED: new_inst.instance_last_modified.isoformat(),
+                BI.INSTANCE_SAMPLES_LAST_MODIFIED: new_inst.instance_samples_last_modified.isoformat(),
+                BI.INSTANCE_HAS_REQUESTS: new_inst.label_requests.filter_by(obsolete=False).count() > 0,
             },
             last_modified=new_inst.instance_last_modified,
             valid_seconds=LT_INSTANCE,
@@ -525,7 +528,8 @@ class APIInstanceCollection(BaseResource):
                 instance.instance_last_modified
                 < instance.instance_samples_last_modified
             ),
-            BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified,
+            BI.INSTANCE_LAST_MODIFIED: instance.instance_last_modified.isoformat(),
+            BI.INSTANCE_SAMPLES_LAST_MODIFIED: instance.instance_samples_last_modified.isoformat(),
             BI.INSTANCE_HAS_REQUESTS: instance.label_requests.filter_by(obsolete=False).count() > 0,
         }
 
@@ -624,7 +628,7 @@ class APIInstanceInferenceData(BaseResource):
                 data,
                 mimetype="application/octet-stream",
                 last_modified=instance.inference_data.data_last_modified,
-                cache_timeout=LT_INFERENCE_DATA,
+                max_age=LT_INFERENCE_DATA,
             )
 
     @authenticated
@@ -636,22 +640,23 @@ class APIInstanceInferenceData(BaseResource):
             data = request.data
             file_pers = persistence.store_file(data)
 
+            db.session.add(file_pers)
+
             # TODO: prevent existing inferencedata to become orphaned
             newRequest = ORMInstanceInferenceData()
-            newRequest.data_file_id = file_pers.file_id
-            newRequest.data_uuid = uuid1().bytes
+            newRequest.file = file_pers
+            newRequest.data_uuid = uuid4().bytes
             newRequest.data_last_modified = datetime.utcnow()
             newRequest.data_etag = token_hex(16)
 
             db.session.add(newRequest)
-            db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
             instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
             model.model_instances_etag = token_hex(16)
 
-            instance.inference_data_id = newRequest.data_id
+            instance.inference_data = newRequest
             db.session.commit()
 
         else:
@@ -683,7 +688,7 @@ class APIInstanceTrainingData(BaseResource):
                 "",
                 last_modified=instance.training_data.data_last_modified,
                 valid_seconds=LT_INFERENCE_DATA,
-                etag=instance.trainins_data.data_etag,
+                etag=instance.training_data.data_etag,
             )
 
     @authenticated
@@ -707,23 +712,25 @@ class APIInstanceTrainingData(BaseResource):
 
             data = request.data
             file_pers = persistence.store_file(data)
-            new_uuid = uuid1()
+
+            db.session.add(file_pers)
+
+            new_uuid = uuid4()
 
             # TODO: prevent existing inferencedata to become orphaned
             newRequest = ORMInstanceTrainingData()
-            newRequest.data_file_id = file_pers.file_id
+            newRequest.file = file_pers
             newRequest.data_uuid = new_uuid.bytes
             newRequest.data_last_modified = datetime.utcnow()
             newRequest.data_etag = token_hex(16)
             db.session.add(newRequest)
-            db.session.commit()
 
             instance.instance_last_modified = datetime.utcnow()
             instance.instance_etag = token_hex(16)
             model.model_instances_last_modified = datetime.utcnow()
             model.model_instances_etag = token_hex(16)
 
-            instance.training_data_id = newRequest.data_id
+            instance.training_data = newRequest
             db.session.commit()
 
         else:
@@ -788,6 +795,9 @@ class APIInstanceMerge(BaseResource):
             descriptors = inst.instance_descriptors.all()
 
             for desc in descriptors:
+                if desc.file is None:
+                    continue
+
                 key = desc.descriptor_key
                 data_raw = persistence.get_file(desc.file)
 
@@ -811,10 +821,10 @@ class APIInstanceMerge(BaseResource):
                 sample.purge_for_merge()
 
                 # transfer ownership of the sample
-                sample.instance_id = instance.instance_id
+                sample.instance = instance
 
                 # generate a new uuid as this is needed in our hirachical layout
-                sample.sample_uuid = uuid1().bytes
+                sample.sample_uuid = uuid4().bytes
 
             # move all tags to the new instance that are not already there
             tags_to_move = inst.tags.all()
@@ -828,10 +838,9 @@ class APIInstanceMerge(BaseResource):
 
                 if not matched:
                     new_tag = ORMSampleTag()
-                    new_tag.instance_id = instance.instance_id
+                    new_tag.instance = instance
                     new_tag.tag_name = tag.tag_name
                     db.session.add(new_tag)
-            db.session.commit()
 
             # get all associations from the merging instance that are mergeable
             associations = (
@@ -847,24 +856,27 @@ class APIInstanceMerge(BaseResource):
             for assoc in associations:
                 for ext_tag in existing_tags:
                     if assoc.tag.tag_name == ext_tag.tag_name:
-                        assoc.tag_id = ext_tag.tag_id
+                        assoc.tag = ext_tag
                         break
             db.session.commit()
 
             # mark the current instance as merged
-            inst.instance_merged_id = instance.instance_id
+            inst.instance_merged = instance
 
         # add the new descriptors to the merged instance
         for key, values in new_descriptors.items():
             for value in values:
                 new_desc = ORMInstanceDescriptor()
                 new_desc.descriptor_key = key
-                new_desc.descriptor_instance_id = instance.instance_id
-                new_desc.descriptor_uuid = uuid1().bytes
+                new_desc.descriptor_instance = instance
+                new_desc.descriptor_uuid = uuid4().bytes
 
                 file_pers = persistence.store_file(value)
 
-                new_desc.descriptor_file_id = file_pers.file_id
+                db.session.add(file_pers)
+
+                new_desc.descriptor_file = file_pers
                 db.session.add(new_desc)
 
         db.session.commit()
+        return SUCCESS()

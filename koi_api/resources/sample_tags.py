@@ -24,7 +24,7 @@ from koi_api.resources.base import (
 )
 from koi_api.resources.base import sample_access, json_request
 from koi_api.orm.sample import ORMAssociationTags, ORMSampleTag
-from koi_api.common.return_codes import ERR_FORB, SUCCESS
+from koi_api.common.return_codes import ERR_FORB, SUCCESS, ERR_BADR
 from koi_api.common.string_constants import BODY_ROLE as BR, BODY_TAG as BT
 from koi_api.resources.lifetime import LT_COLLECTION
 
@@ -81,8 +81,19 @@ class APISampleTag(BaseResource):
         """
         """
         changed = False
+
+        if not isinstance(json_object, list):
+            return ERR_BADR("Expected a list of tags")
+
         # go through all tags in the json_list
         for tag in json_object:
+            # check that the tag is a dict with teh valid format
+            if not isinstance(tag, dict):
+                return ERR_BADR("Expected a tag to be a dict")
+            if BT.TAG_NAME not in tag.keys():
+                return ERR_BADR("Expected a tag to have a 'name' key")
+            if not isinstance(tag[BT.TAG_NAME], str):
+                return ERR_BADR("Expected a tag name to be a string")
 
             # get all tags currently registered
             all_tags = {t.tag_name: t for t in instance.tags}
@@ -96,8 +107,8 @@ class APISampleTag(BaseResource):
                 if current_tag not in sample_tags:
                     # generate new association between sample and tag
                     new_assoc = ORMAssociationTags()
-                    new_assoc.sample_id = sample.sample_id
-                    new_assoc.tag_id = current_tag.tag_id
+                    new_assoc.sample = sample
+                    new_assoc.tag = current_tag
 
                     # check if this association is to be kept when merging?
                     if sample.sample_finalized:
@@ -112,14 +123,13 @@ class APISampleTag(BaseResource):
                 # create a new tag and associate it
                 new_tag = ORMSampleTag()
                 new_tag.tag_name = tag[BT.TAG_NAME]
-                new_tag.instance_id = instance.instance_id
+                new_tag.instance = instance
                 db.session.add(new_tag)
-                db.session.commit()
 
                 # generate new association between sample and tag
                 new_assoc = ORMAssociationTags()
-                new_assoc.sample_id = sample.sample_id
-                new_assoc.tag_id = new_tag.tag_id
+                new_assoc.sample = sample
+                new_assoc.tag = new_tag
 
                 # check if this association is to be kept when merging?
                 if sample.sample_finalized:
@@ -130,9 +140,6 @@ class APISampleTag(BaseResource):
                 db.session.add(new_assoc)
 
                 changed = True
-
-            # commit changes made in this run
-            db.session.commit()
 
         if changed:
             instance.instance_samples_last_modified = datetime.utcnow()
@@ -156,7 +163,6 @@ class APISampleTag(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
     ):
 
         return ERR_FORB()
@@ -180,7 +186,7 @@ class APISampleTag(BaseResource):
         for tag_assoc in tags:
             db.session.delete(tag_assoc)
         for tag in instance.tags:
-            if tag.samples is None:
+            if len(tag.samples) == 0:
                 db.session.delete(tag)
 
         instance.instance_samples_last_modified = datetime.utcnow()
@@ -208,7 +214,7 @@ class APISampleTagCollection(BaseResource):
                 db.session.delete(t)
 
         for tag in instance.tags:
-            if tag.samples is None:
+            if len(tag.samples) == 0:
                 db.session.delete(tag)
 
         instance.instance_samples_last_modified = datetime.utcnow()
@@ -223,7 +229,6 @@ class APISampleTagCollection(BaseResource):
     @model_access([BR.ROLE_SEE_MODEL])
     @instance_access([BR.ROLE_SEE_INSTANCE])
     @sample_access
-    @json_request
     def put(
         self,
         model_uuid,
@@ -233,7 +238,7 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()
 
@@ -250,7 +255,7 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()
 
@@ -267,6 +272,6 @@ class APISampleTagCollection(BaseResource):
         sample_uuid,
         sample,
         me,
-        json_object,
+        tag
     ):
         return ERR_FORB()

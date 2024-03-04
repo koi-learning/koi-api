@@ -13,13 +13,14 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
-from uuid import uuid1, UUID
+from uuid import uuid4, UUID
 from koi_api.orm import db
 from koi_api.resources.base import BaseResource, paged, authenticated, user_access, json_request
 from koi_api.orm.role import ORMUserRoleGeneral, ORMUserRoleModel, ORMUserRoleInstance
 from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
 from koi_api.common.string_constants import BODY_ROLE as BR
 from koi_api.common.name_generator import gen_name
+from sqlalchemy import select
 
 
 class APIUserRoleGeneral(BaseResource):
@@ -28,7 +29,8 @@ class APIUserRoleGeneral(BaseResource):
     @user_access([])
     def get(self, page_offset, page_limit, me):
         # get the roles
-        roles = ORMUserRoleGeneral.query.offset(page_offset).limit(page_limit).all()
+        roles_stmt = select(ORMUserRoleGeneral).offset(page_offset).limit(page_limit)
+        roles = db.session.scalars(roles_stmt).all()
 
         # construct the response
         response = [
@@ -52,24 +54,18 @@ class APIUserRoleGeneral(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleGeneral()
         new_role.role_uuid = new_uuid.bytes
         new_role.is_essential = 0
 
         if BR.ROLE_NAME in json_object:
-            try:
-                new_role.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_name = str(json_object[BR.ROLE_NAME])
         else:
             new_role.role_name = gen_name()
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                new_role.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_description = str(json_object[BR.ROLE_DESCRIPTION])
         else:
             new_role.role_description = ""
 
@@ -78,7 +74,7 @@ class APIUserRoleGeneral(BaseResource):
                 new_role.grant_access = min(
                     1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.grant_access = 0
@@ -88,7 +84,7 @@ class APIUserRoleGeneral(BaseResource):
                 new_role.edit_users = min(
                     1, max(0, int(json_object[BR.ROLE_EDIT_USERS]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.edit_users = 0
@@ -98,7 +94,7 @@ class APIUserRoleGeneral(BaseResource):
                 new_role.edit_models = min(
                     1, max(0, int(json_object[BR.ROLE_EDIT_MODELS]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.edit_models = 0
@@ -108,7 +104,7 @@ class APIUserRoleGeneral(BaseResource):
                 new_role.edit_roles = min(
                     1, max(0, int(json_object[BR.ROLE_EDIT_ROLES]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.edit_roles = 0
@@ -129,11 +125,11 @@ class APIUserRoleGeneral(BaseResource):
         )
 
     @authenticated
-    def put(self):
+    def put(self, me):
         return ERR_FORB()
 
     @authenticated
-    def delete(self):
+    def delete(self, me):
         return ERR_FORB()
 
 
@@ -142,9 +138,10 @@ class APIUserRoleGeneralCollection(BaseResource):
     @user_access([])
     def get(self, me, role_uuid):
         # get the role
-        r = ORMUserRoleGeneral.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleGeneral).where(
+            ORMUserRoleGeneral.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
@@ -171,47 +168,42 @@ class APIUserRoleGeneralCollection(BaseResource):
     @json_request
     def put(self, me, role_uuid, json_object):
         # get the role
-        r = ORMUserRoleGeneral.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleGeneral).where(
+            ORMUserRoleGeneral.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
 
         if BR.ROLE_NAME in json_object:
-            try:
-                r.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            r.role_name = str(json_object[BR.ROLE_NAME])
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                r.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            r.role_description = str(json_object[BR.ROLE_DESCRIPTION])
 
         if BR.ROLE_GRANT_ACCESS in json_object:
             try:
                 r.grant_access = min(1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_EDIT_USERS in json_object:
             try:
                 r.edit_users = min(1, max(0, int(json_object[BR.ROLE_EDIT_USERS])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_EDIT_MODELS in json_object:
             try:
                 r.edit_models = min(1, max(0, int(json_object[BR.ROLE_EDIT_MODELS])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_EDIT_ROLES in json_object:
             try:
                 r.edit_roles = min(1, max(0, int(json_object[BR.ROLE_EDIT_ROLES])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         db.session.commit()
@@ -222,9 +214,10 @@ class APIUserRoleGeneralCollection(BaseResource):
     @user_access([BR.ROLE_EDIT_ROLES])
     def delete(self, me, role_uuid):
         # get the role
-        r = ORMUserRoleGeneral.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleGeneral).where(
+            ORMUserRoleGeneral.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
@@ -244,7 +237,8 @@ class APIUserRoleModel(BaseResource):
     @user_access([])
     def get(self, me, page_offset, page_limit):
         # get the roles
-        roles = ORMUserRoleModel.query.offset(page_offset).limit(page_limit).all()
+        roles_stmt = select(ORMUserRoleModel).offset(page_offset).limit(page_limit)
+        roles = db.session.scalars(roles_stmt).all()
 
         # construct the response
         response = [
@@ -268,32 +262,26 @@ class APIUserRoleModel(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleModel()
         new_role.role_uuid = new_uuid.bytes
 
         new_role.is_essential = 0
 
         if BR.ROLE_NAME in json_object:
-            try:
-                new_role.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_name = str(json_object[BR.ROLE_NAME])
         else:
             new_role.role_name = gen_name()
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                new_role.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_description = str(json_object[BR.ROLE_DESCRIPTION])
         else:
             new_role.role_description = ""
 
         if BR.ROLE_SEE_MODEL in json_object:
             try:
                 new_role.can_see = min(1, max(0, int(json_object[BR.ROLE_SEE_MODEL])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.can_see = 0
@@ -303,7 +291,7 @@ class APIUserRoleModel(BaseResource):
                 new_role.instantiate = min(
                     1, max(0, int(json_object[BR.ROLE_INSTANTIATE_MODEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.instantiate = 0
@@ -311,7 +299,7 @@ class APIUserRoleModel(BaseResource):
         if BR.ROLE_EDIT_MODEL in json_object:
             try:
                 new_role.edit = min(1, max(0, int(json_object[BR.ROLE_EDIT_MODEL])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.edit = 0
@@ -321,7 +309,7 @@ class APIUserRoleModel(BaseResource):
                 new_role.download_code = min(
                     1, max(0, int(json_object[BR.ROLE_DOWNLOAD_CODE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.download_code = 0
@@ -331,7 +319,7 @@ class APIUserRoleModel(BaseResource):
                 new_role.grant_access = min(
                     1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS_MODEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.grant_access = 0
@@ -366,9 +354,10 @@ class APIUserRoleModelCollection(BaseResource):
     @user_access([])
     def get(self, me, role_uuid):
         # get the role
-        r = ORMUserRoleModel.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleModel).where(
+            ORMUserRoleModel.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
@@ -394,29 +383,24 @@ class APIUserRoleModelCollection(BaseResource):
     @user_access([BR.ROLE_EDIT_ROLES])
     @json_request
     def put(self, me, role_uuid, json_object):
-        r = ORMUserRoleModel.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleModel).where(
+            ORMUserRoleModel.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
 
         if BR.ROLE_NAME in json_object:
-            try:
-                r.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            r.role_name = str(json_object[BR.ROLE_NAME])
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                r.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            r.role_description = str(json_object[BR.ROLE_DESCRIPTION])
 
         if BR.ROLE_SEE_MODEL in json_object:
             try:
                 r.can_see = min(1, max(0, int(json_object[BR.ROLE_SEE_MODEL])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_INSTANTIATE_MODEL in json_object:
@@ -424,13 +408,13 @@ class APIUserRoleModelCollection(BaseResource):
                 r.instantiate = min(
                     1, max(0, int(json_object[BR.ROLE_INSTANTIATE_MODEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_EDIT_MODEL in json_object:
             try:
                 r.edit = min(1, max(0, int(json_object[BR.ROLE_EDIT_MODEL])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_DOWNLOAD_CODE in json_object:
@@ -438,7 +422,7 @@ class APIUserRoleModelCollection(BaseResource):
                 r.download_code = min(
                     1, max(0, int(json_object[BR.ROLE_DOWNLOAD_CODE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_GRANT_ACCESS_MODEL in json_object:
@@ -446,7 +430,7 @@ class APIUserRoleModelCollection(BaseResource):
                 r.grant_access = min(
                     1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS_MODEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         db.session.commit()
@@ -457,9 +441,10 @@ class APIUserRoleModelCollection(BaseResource):
     @user_access([BR.ROLE_EDIT_ROLES])
     def delete(self, me, role_uuid):
         # get the role
-        r = ORMUserRoleModel.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleModel).where(
+            ORMUserRoleModel.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
@@ -479,7 +464,8 @@ class APIUserRoleInstance(BaseResource):
     @user_access([])
     def get(self, page_offset, page_limit, me):
         # get the roles
-        roles = ORMUserRoleInstance.query.offset(page_offset).limit(page_limit).all()
+        roles_stmt = select(ORMUserRoleInstance).offset(page_offset).limit(page_limit)
+        roles = db.session.scalars(roles_stmt).all()
 
         # construct the response
         response = [
@@ -506,25 +492,19 @@ class APIUserRoleInstance(BaseResource):
     @json_request
     def post(self, me, json_object):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
         new_role = ORMUserRoleInstance()
         new_role.role_uuid = new_uuid.bytes
 
         new_role.is_essential = 0
 
         if BR.ROLE_NAME in json_object:
-            try:
-                new_role.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_name = str(json_object[BR.ROLE_NAME])
         else:
             new_role.role_name = gen_name()
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                new_role.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            new_role.role_description = str(json_object[BR.ROLE_DESCRIPTION])
         else:
             new_role.role_description = ""
 
@@ -533,7 +513,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.can_see = min(
                     1, max(0, int(json_object[BR.ROLE_SEE_INSTANCE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.can_see = 0
@@ -543,7 +523,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.add_sample = min(
                     1, max(0, int(json_object[BR.ROLE_ADD_SAMPLE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.add_sample = 0
@@ -553,7 +533,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.get_training_data = min(
                     1, max(0, int(json_object[BR.ROLE_GET_TRAINING_DATA]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.get_training_data = 0
@@ -563,7 +543,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.get_inference_data = min(
                     1, max(0, int(json_object[BR.ROLE_GET_INFERENCE_DATA]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.get_inference_data = 0
@@ -571,7 +551,7 @@ class APIUserRoleInstance(BaseResource):
         if BR.ROLE_EDIT_INSTANCE in json_object:
             try:
                 new_role.edit = min(1, max(0, int(json_object[BR.ROLE_EDIT_INSTANCE])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.edit = 0
@@ -581,7 +561,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.grant_access = min(
                     1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS_INSTANCE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.grant_access = 0
@@ -591,7 +571,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.request_label = min(
                     1, max(0, int(json_object[BR.ROLE_REQUEST_LABEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.request_label = 0
@@ -601,7 +581,7 @@ class APIUserRoleInstance(BaseResource):
                 new_role.response_label = min(
                     1, max(0, int(json_object[BR.ROLE_RESPONSE_LABEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
         else:
             new_role.response_label = 0
@@ -639,9 +619,10 @@ class APIUserRoleInstanceCollection(BaseResource):
     @user_access([])
     def get(self, role_uuid, me):
         # get the role
-        r = ORMUserRoleInstance.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleInstance).where(
+            ORMUserRoleInstance.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
@@ -670,35 +651,30 @@ class APIUserRoleInstanceCollection(BaseResource):
     @user_access([BR.ROLE_EDIT_ROLES])
     @json_request
     def put(self, role_uuid, me, json_object):
-        r = ORMUserRoleInstance.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleInstance).where(
+            ORMUserRoleInstance.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()
 
         if BR.ROLE_NAME in json_object:
-            try:
-                r.role_name = json_object[BR.ROLE_NAME]
-            except ValueError:
-                return ERR_BADR()
+            r.role_name = str(json_object[BR.ROLE_NAME])
 
         if BR.ROLE_DESCRIPTION in json_object:
-            try:
-                r.role_description = json_object[BR.ROLE_DESCRIPTION]
-            except ValueError:
-                return ERR_BADR()
+            r.role_description = str(json_object[BR.ROLE_DESCRIPTION])
 
         if BR.ROLE_SEE_INSTANCE in json_object:
             try:
                 r.can_see = min(1, max(0, int(json_object[BR.ROLE_SEE_INSTANCE])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_ADD_SAMPLE in json_object:
             try:
                 r.add_sample = min(1, max(0, int(json_object[BR.ROLE_ADD_SAMPLE])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_GET_TRAINING_DATA in json_object:
@@ -706,7 +682,7 @@ class APIUserRoleInstanceCollection(BaseResource):
                 r.get_training_data = min(
                     1, max(0, int(json_object[BR.ROLE_GET_TRAINING_DATA]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_GET_INFERENCE_DATA in json_object:
@@ -714,13 +690,13 @@ class APIUserRoleInstanceCollection(BaseResource):
                 r.get_inference_data = min(
                     1, max(0, int(json_object[BR.ROLE_GET_INFERENCE_DATA]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_EDIT_INSTANCE in json_object:
             try:
                 r.edit = min(1, max(0, int(json_object[BR.ROLE_EDIT_INSTANCE])))
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_GRANT_ACCESS_INSTANCE in json_object:
@@ -728,7 +704,7 @@ class APIUserRoleInstanceCollection(BaseResource):
                 r.grant_access = min(
                     1, max(0, int(json_object[BR.ROLE_GRANT_ACCESS_INSTANCE]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_REQUEST_LABEL in json_object:
@@ -736,7 +712,7 @@ class APIUserRoleInstanceCollection(BaseResource):
                 r.request_label = min(
                     1, max(0, int(json_object[BR.ROLE_REQUEST_LABEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         if BR.ROLE_RESPONSE_LABEL in json_object:
@@ -744,7 +720,7 @@ class APIUserRoleInstanceCollection(BaseResource):
                 r.response_label = min(
                     1, max(0, int(json_object[BR.ROLE_RESPONSE_LABEL]))
                 )
-            except ValueError:
+            except TypeError:
                 return ERR_BADR()
 
         db.session.commit()
@@ -755,9 +731,10 @@ class APIUserRoleInstanceCollection(BaseResource):
     @user_access([BR.ROLE_EDIT_ROLES])
     def delete(self, role_uuid, me):
         # get the role
-        r = ORMUserRoleInstance.query.filter_by(
-            role_uuid=UUID(role_uuid).bytes
-        ).one_or_none()
+        role_stmt = select(ORMUserRoleInstance).where(
+            ORMUserRoleInstance.role_uuid == UUID(role_uuid).bytes
+        )
+        r = db.session.scalars(role_stmt).one_or_none()
 
         if r is None:
             return ERR_NOFO()

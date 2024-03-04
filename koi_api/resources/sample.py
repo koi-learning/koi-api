@@ -27,7 +27,7 @@ from koi_api.resources.base import (
     sample_label_access,
 )
 from koi_api.resources.base import paged, sample_access, sample_data_access, json_request, sample_filter
-from uuid import UUID, uuid1
+from uuid import UUID, uuid4
 from koi_api.orm.sample import ORMSample, ORMSampleData, ORMSampleLabel, ORMSampleTag
 from koi_api.persistence import persistence
 from koi_api.common.return_codes import ERR_FORB, ERR_NOFO, ERR_BADR, SUCCESS
@@ -80,11 +80,11 @@ class APISample(BaseResource):
         Returns:
             [list of object with uuid field]: list of all samples assigned to this instance
         """
-        samples = instance.samples
+        stmt_sample = instance.samples
 
         if len(filter_include) > 0:
             # filter includes
-            samples = samples.filter(
+            stmt_sample = stmt_sample.filter(
                 ORMSample.tags.any(
                     ORMSampleTag.tag_name.in_(filter_include),
                     sample_id=ORMSample.sample_id,
@@ -94,7 +94,7 @@ class APISample(BaseResource):
 
         if len(filter_exclude) > 0:
             # filter excludes
-            samples = samples.filter(
+            stmt_sample = stmt_sample.filter(
                 ~ORMSample.tags.any(
                     ORMSampleTag.tag_name.in_(filter_exclude),
                     sample_id=ORMSample.sample_id,
@@ -103,7 +103,8 @@ class APISample(BaseResource):
             )
 
         # paging
-        samples = samples.offset(page_offset).limit(page_limit).all()
+        stmt_sample = stmt_sample.offset(page_offset).limit(page_limit)
+        samples = stmt_sample.all()
 
         response = [
             {
@@ -140,17 +141,18 @@ class APISample(BaseResource):
             [string]: uuid of new sample
         """
         new_sample = ORMSample()
-        new_sample.instance_id = instance.instance_id
+        new_sample.instance = instance
         new_sample.sample_finalized = 0
-        new_sample.sample_uuid = uuid1().bytes
+        new_sample.sample_uuid = uuid4().bytes
 
         new_sample.sample_last_modified = datetime.utcnow()
         new_sample.sample_etag = token_hex(16)
 
+        db.session.add(new_sample)
+
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        db.session.add(new_sample)
         db.session.commit()
         return SUCCESS(
             {
@@ -368,11 +370,11 @@ class APISampleData(BaseResource):
         if sample.sample_finalized:
             return ERR_BADR("sample is finalized")
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_data = ORMSampleData()
-        new_data.file_id = None
-        new_data.sample_id = sample.sample_id
+        new_data.file = None
+        new_data.sample = sample
         new_data.data_uuid = new_uuid.bytes
 
         if BS.SAMPLE_KEY in json_object:
@@ -515,6 +517,9 @@ class APISampleDataCollection(BaseResource):
         me,
         json_object,
     ):
+        if sample.sample_finalized:
+            return ERR_BADR("sample is finalized")
+
         if BS.SAMPLE_KEY in json_object:
             if data.data_key != json_object[BS.SAMPLE_KEY]:
                 data.data_key = json_object[BS.SAMPLE_KEY]
@@ -640,11 +645,11 @@ class APISampleLabel(BaseResource):
         json_object,
     ):
 
-        new_uuid = uuid1()
+        new_uuid = uuid4()
 
         new_label = ORMSampleLabel()
-        new_label.file_id = None
-        new_label.sample_id = sample.sample_id
+        new_label.file = None
+        new_label.sample = sample
         new_label.label_uuid = new_uuid.bytes
 
         if BS.SAMPLE_KEY in json_object:
@@ -850,6 +855,8 @@ class APISampleDataFile(BaseResource):
         data,
         me,
     ):
+        if data.file is None:
+            return ERR_NOFO("no data specified")
         valid = LT_SAMPLE
         if sample.sample_finalized:
             valid = LT_SAMPLE_FINALIZED
@@ -879,19 +886,20 @@ class APISampleDataFile(BaseResource):
     ):
         if data.file is None:
             return ERR_NOFO("no data specified")
-        else:
-            data_raw = persistence.get_file(data.file)
-            data_raw = BytesIO(data_raw)
-            data_raw.seek(0)
-            valid = LT_SAMPLE
-            if sample.sample_finalized:
-                valid = LT_SAMPLE_FINALIZED
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=data.data_last_modified,
-                cache_timeout=valid,
-            )
+
+        data_raw = persistence.get_file(data.file)
+        data_raw = BytesIO(data_raw)
+        data_raw.seek(0)
+        valid = LT_SAMPLE
+        if sample.sample_finalized:
+            valid = LT_SAMPLE_FINALIZED
+        return send_file(
+            data_raw,
+            mimetype="application/octet-stream",
+            last_modified=data.data_last_modified,
+            max_age=valid,
+            etag=data.data_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -916,6 +924,8 @@ class APISampleDataFile(BaseResource):
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
+        db.session.add(file_pers)
+
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
         data.data_last_modified = datetime.utcnow()
@@ -923,8 +933,7 @@ class APISampleDataFile(BaseResource):
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        data.file_id = file_pers.file_id
-        db.session.add(file_pers)
+        data.file = file_pers
         db.session.commit()
 
         return SUCCESS()
@@ -986,6 +995,9 @@ class APISampleLabelFile(BaseResource):
         label,
         me,
     ):
+        if label.file is None:
+            return ERR_NOFO("no data specified")
+
         return SUCCESS(
             "",
             last_modified=label.label_last_modified,
@@ -1012,18 +1024,17 @@ class APISampleLabelFile(BaseResource):
     ):
         if label.file is None:
             return ERR_NOFO("no data specified")
-        else:
-            data_raw = persistence.get_file(label.file)
-            data_raw = BytesIO(data_raw)
-            data_raw.seek(0)
-            return send_file(
-                data_raw,
-                mimetype="application/octet-stream",
-                last_modified=label.label_last_modified,
-                cache_timeout=LT_SAMPLE,
-            )
 
-        return SUCCESS()
+        data_raw = persistence.get_file(label.file)
+        data_raw = BytesIO(data_raw)
+        data_raw.seek(0)
+        return send_file(
+            data_raw,
+            mimetype="application/octet-stream",
+            last_modified=label.label_last_modified,
+            max_age=LT_SAMPLE,
+            etag=label.label_etag,
+        )
 
     @authenticated
     @model_access([BR.ROLE_SEE_MODEL])
@@ -1045,7 +1056,9 @@ class APISampleLabelFile(BaseResource):
         data_raw = request.data
         file_pers = persistence.store_file(data_raw)
 
-        label.file_id = file_pers.file_id
+        db.session.add(file_pers)
+
+        label.file = file_pers
 
         sample.sample_last_modified = datetime.utcnow()
         sample.sample_etag = token_hex(16)
@@ -1054,7 +1067,6 @@ class APISampleLabelFile(BaseResource):
         instance.instance_samples_last_modified = datetime.utcnow()
         instance.instance_samples_etag = token_hex(16)
 
-        db.session.add(file_pers)
         db.session.commit()
 
         return SUCCESS()

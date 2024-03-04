@@ -12,11 +12,175 @@
 # Lesser General Public License for more details. A copy of the
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
-import koi_core as koi
-from . import Dummy
+
+from . import Dummy, make_empty_model, make_empty_instance
+from typing import Tuple
+from flask.testing import FlaskClient
 
 
-def test_instance_merging(testserver):
+def test_forbidden(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+    instance = make_empty_instance(auth_client, model["model_uuid"])
+
+    # put and delete are forbidden for instances
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 405
+
+    ret = client.delete(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 405
+
+    # post is forbidden for single instances
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}", headers=header, json={})
+    assert ret.status_code == 405
+
+    # put and delete are forbidden for data on single instances
+    for data in ["inference", "training"]:
+        ret = client.put(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data}", headers=header, json={})
+        assert ret.status_code == 405
+
+        ret = client.delete(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data}", headers=header)
+        assert ret.status_code == 405
+
+
+def test_create_failure(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client, finalized=False)
+
+    # create an instance, but the model is not finalized
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 400
+
+
+def test_create(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+
+    # create an instance
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 200
+
+    # create another instance, but this time with a name
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={"instance_name": "test", "instance_description": "test"})
+    assert ret.status_code == 200
+    assert ret.get_json()["instance_name"] == "test"
+    assert ret.get_json()["instance_description"] == "test"
+
+    # head request
+    ret = client.head(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 200
+
+
+def test_modify(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+    instance = make_empty_instance(auth_client, model["model_uuid"])
+
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+    new_instance = ret.get_json()
+
+    assert new_instance["instance_name"] != "test"
+    assert new_instance["instance_description"] != "test"
+
+    # wrongfully finalize the instance
+    new_instance["finalized"] = "true"
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header, json=new_instance)
+    assert ret.status_code == 400
+
+    # modify the instance and read back the changes
+    new_instance["instance_name"] = "test"
+    new_instance["instance_description"] = "test"
+    new_instance["finalized"] = True
+
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header, json=new_instance)
+    assert ret.status_code == 200
+
+    # read back the changes
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+    read_instance = ret.get_json()
+
+    for key in ["instance_name", "instance_description", "finalized"]:
+        assert new_instance[key] == read_instance[key]
+
+    # modifying a finalized instance is forbidden
+    new_instance["finalized"] = False
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header, json=new_instance)
+    assert ret.status_code == 400
+
+    # head request on single instance should always work
+    ret = client.head(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+
+
+def test_delete(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+
+    # create an instance
+    ret = client.post(f"/api/model/{model['model_uuid']}/instance", headers=header, json={})
+    assert ret.status_code == 200
+
+    # parse the new instance
+    new_instance = ret.get_json()
+
+    # check that we can see the instance
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == 1
+
+    # delete the instance
+    ret = client.delete(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 200
+
+    # check that we can't see the instance
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance", headers=header)
+    assert ret.status_code == 200
+    assert len(ret.get_json()) == 0
+
+    ret = client.get(f"/api/model/{model['model_uuid']}/instance/{new_instance['instance_uuid']}", headers=header)
+    assert ret.status_code == 404
+    
+
+def test_data(auth_client: Tuple[FlaskClient, str]):
+    client, header = auth_client
+    model = make_empty_model(auth_client)
+    instance = make_empty_instance(auth_client, model["model_uuid"])
+
+    # inference and trainings data is handled the same so we can iterate over it
+    datas = ["inference", "training"]
+    for data_type in datas:
+        # head and get should fail if there is no data
+        ret = client.head(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header)
+        assert ret.status_code == 404
+
+        ret = client.get(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header)
+        assert ret.status_code == 404
+
+        # post should fail if the instance is not finalized
+        ret = client.post(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header, json={})
+        assert ret.status_code == 400
+
+    # finalize the instance
+    instance["finalized"] = True
+    ret = client.put(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}", headers=header, json=instance)
+    assert ret.status_code == 200
+
+    # now we should be able to post data
+    for data_type in datas:
+        ret = client.post(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header, data=b"test")
+        assert ret.status_code == 200
+
+        # head and get should work
+        ret = client.head(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header)
+        assert ret.status_code == 200
+
+        ret = client.get(f"/api/model/{model['model_uuid']}/instance/{instance['instance_uuid']}/{data_type}", headers=header)
+        assert ret.status_code == 200
+
+
+def not_instance_merging(testserver):
     try:
         koi.init()
     except koi.exceptions.KoiInitializationError:

@@ -13,10 +13,12 @@
 # GNU Lesser General Public License is distributed along with this
 # software and can be found at http://www.gnu.org/licenses/lgpl.html
 
+from sqlalchemy.orm import mapped_column
+from sqlalchemy import Integer, String
 from koi_api.orm import db
 
 
 class ORMFile(db.Model):
     __tablename__ = "file"
-    file_id = db.Column(db.Integer, primary_key=True, unique=True)
-    file_url = db.Column(db.String(500), unique=True)
+    file_id = mapped_column(Integer, primary_key=True, unique=True)
+    file_url = mapped_column(String(500))

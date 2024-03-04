@@ -15,7 +15,8 @@
 
 from flask_restful import request
 import secrets
-from uuid import uuid1, UUID
+from sqlalchemy import select
+from uuid import uuid4, UUID
 from hashlib import sha256
 from datetime import datetime, timedelta
 from koi_api.common.return_codes import (
@@ -34,6 +35,7 @@ from koi_api.common.string_constants import (
     BODY_GENERAL as BG,
     BODY_ROLE as BR,
 )
+from koi_api.resources.lifetime import LT_SESSION_TOKEN
 from koi_api.common.name_generator import gen_name
 
 
@@ -49,7 +51,8 @@ class APIUser(BaseResource):
         """
         Get a list of all users
         """
-        users = ORMUser.query.offset(page_offset).limit(page_limit).all()
+        stmt_users = select(ORMUser).offset(page_offset).limit(page_limit)
+        users = db.session.scalars(stmt_users).all()
 
         return SUCCESS([{BU.USER_UUID: UUID(bytes=u.user_uuid).hex, BU.USER_NAME: u.user_name} for u in users])
 
@@ -73,12 +76,15 @@ class APIUser(BaseResource):
         else:
             password = secrets.token_hex(16)
 
-        counter = 1
-        while not ORMUser.query.filter_by(user_name=user_name).one_or_none() is None:
-            user_name = gen_name() + secrets.token_hex(counter)
-            counter += 1
+        user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
+        user = db.session.scalars(user_stmt).one_or_none()
 
-        new_uuid = uuid1()
+        while user is not None:
+            user_name = user_name + secrets.token_hex(2)
+            user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
+            user = db.session.scalars(user_stmt).one_or_none()
+
+        new_uuid = uuid4()
 
         new_user.user_name = user_name
         new_user.user_hash = hash_password(password)
@@ -103,7 +109,6 @@ class APIUserCollection(BaseResource):
     """
     DOCSTRING
     """
-
     @authenticated
     @user_access([])
     def get(self, user_uuid, me, user):
@@ -131,7 +136,9 @@ class APIUserCollection(BaseResource):
 
         # update the user fields if transmitted
         if BU.USER_NAME in json_object:
-            if ORMUser.query.filter_by(user_name=json_object[BU.USER_NAME]).one_or_none() is None:
+            user_probe_stmt = select(ORMUser).where(ORMUser.user_name == json_object[BU.USER_NAME])
+            user_probe = db.session.scalars(user_probe_stmt).one_or_none()
+            if user_probe is None:
                 user.user_name = json_object[BU.USER_NAME]
             else:
                 return ERR_TAKE("user name is taken")
@@ -156,6 +163,7 @@ class APIUserCollection(BaseResource):
         # we need to invalidate all user tokens
         for token in user.tokens.all():
             token.token_invalidated = True
+            token.token_value = "x"
 
         # delete the user entry
         db.session.delete(user)
@@ -175,10 +183,14 @@ class APILogout(BaseResource):
     @authenticated
     def post(self, me):
 
-        my_tokens = me.tokens.filter_by(token_invalidated=False).all()
+        token_stmt = select(ORMToken).where(
+            ORMToken.user == me,
+        )
+        my_tokens = db.session.scalars(token_stmt).all()
 
         for token in my_tokens:
-            token.invalidated = True
+            token.token_invalidated = True
+            token.token_value = "x"
 
         db.session.commit()
 
@@ -220,11 +232,12 @@ class APILogin(BaseResource):
             return ERR_BADR()
 
         # lookup the user in the database
-        user = ORMUser.query.filter_by(user_name=user_name).one_or_none()
+        user_stmt = select(ORMUser).where(ORMUser.user_name == user_name)
+        user = db.session.scalars(user_stmt).one_or_none()
 
         # do we know the user trying to login?
         if user is None:
-            return ERR_NOFO()
+            return ERR_NOFO()  # This enables user enumeration! could be problematic
 
         # calculate the hash for the supplied password
         password = hash_password(password)
@@ -235,7 +248,7 @@ class APILogin(BaseResource):
 
         token_value = None
         token_created = datetime.utcnow()
-        token_valid = token_created + timedelta(minutes=15)
+        token_valid = token_created + timedelta(seconds=LT_SESSION_TOKEN)
 
         token = 1
         retries_left = 20
@@ -248,19 +261,13 @@ class APILogin(BaseResource):
             token_value = secrets.token_hex(16)
 
             # check if token exists
-            token = ORMToken.query.filter_by(token_value=token_value).one_or_none()
-
-            # check if token is expired or invalidated
-            if token is not None:
-                if token.token_invalidated or (token.token_valid + timedelta(minutes=15)) < datetime.utcnow():
-                    token.token_value = "x" * 32
-                    db.session.commit()
-                    token = None
+            token_stmt = select(ORMToken).where(ORMToken.token_value == token_value)
+            token = db.session.scalars(token_stmt).one_or_none()
 
         # register token
         token = ORMToken()
         token.token_value = token_value
-        token.user_id = user.user_id
+        token.user = user
         token.token_created = token_created
         token.token_valid = token_valid
         token.token_invalidated = False
